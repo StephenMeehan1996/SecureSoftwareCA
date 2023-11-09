@@ -1,16 +1,24 @@
-﻿using System;
+﻿using SSD_Assignment___Banking_Application;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace Banking_Application
 {
     public class Program
     {
+        //public  Bank_Account ConvertBase64(Bank_Account ba)
+        //{
+
+        //}
+
         public static void Main(string[] args)
         {
             
             Data_Access_Layer dal = Data_Access_Layer.getInstance();
-            dal.loadBankAccounts();
+            
+             dal.loadBankAccounts();
             bool running = true;
 
             do
@@ -155,8 +163,11 @@ namespace Banking_Application
                                 }
 
                             } while (overdraftAmount < 0);
+                            byte[] iv = Encryption_Handler.CreateIV();
+                            string accountNo = System.Guid.NewGuid().ToString();
 
-                            ba = new Current_Account(name, addressLine1, addressLine2, addressLine3, town, balance, overdraftAmount);
+
+                            ba = new Current_Account(accountNo,name, addressLine1, addressLine2, addressLine3, town, balance, overdraftAmount,iv);
                         }
 
                         else
@@ -185,15 +196,31 @@ namespace Banking_Application
                                 }
 
                             } while (interestRate < 0);
-
-                            ba = new Savings_Account(name, addressLine1, addressLine2, addressLine3, town, balance, interestRate);
+                            byte[] iv = Encryption_Handler.CreateIV(); // create account random IV
+                            string accountNo = System.Guid.NewGuid().ToString(); // Create account num
+                            ba = new Savings_Account(accountNo,name, addressLine1, addressLine2, addressLine3, town, balance, interestRate, iv);
                         }
 
-                        String accNo = dal.addBankAccount(ba);
+                        //Encrypt here//
+                     
+                        Bank_Account ea = Encryption_Handler.EncrypCurrentAccount(ba); // encrypt bank account
+                        Console.WriteLine("\nEncrypted Bank Account");
+                        Console.WriteLine("---------------------------");
+                        Console.WriteLine(ea.ToString()); //print
+                        Console.WriteLine("---------------------------\n");
 
-                        Console.WriteLine("New Account Number Is: " + accNo);
+                        String accNo = dal.addBankAccount(ea); // add encrypted bank account
+
+                        Console.WriteLine("Decrypted Bank Account");
+                        Console.WriteLine("---------------------------");
+                        Bank_Account da = Encryption_Handler.DecrypCurrentAccount(ea); // decrypted account
+                        Console.WriteLine(da.ToString());
+                        Console.WriteLine("---------------------------\n");
+
+                        Console.WriteLine("New Account Number Is: " + ba.accountNo); // print account number
 
                         break;
+
                     case "2":
                         Console.WriteLine("Enter Account Number: ");
                         accNo = Console.ReadLine();

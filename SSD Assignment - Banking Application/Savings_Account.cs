@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace Banking_Application
 {
+    [Serializable]
     public class Savings_Account: Bank_Account
     {
 
@@ -15,8 +16,8 @@ namespace Banking_Application
         {
 
         }
-        
-        public Savings_Account(String name, String address_line_1, String address_line_2, String address_line_3, String town, double balance, double interestRate) : base(name, address_line_1, address_line_2, address_line_3, town, balance)
+
+        public Savings_Account(String accountNo,String name, String address_line_1, String address_line_2, String address_line_3, String town, double balance, double interestRate, byte[] iv) : base(accountNo,name, address_line_1, address_line_2, address_line_3, town, balance,iv)
         {
             this.interestRate = interestRate;
         }

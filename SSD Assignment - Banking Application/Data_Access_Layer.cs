@@ -78,13 +78,13 @@ namespace Banking_Application
                     var command = connection.CreateCommand();
                     command.CommandText = "SELECT * FROM Bank_Accounts";
                     SqliteDataReader dr = command.ExecuteReader();
-                    
-                    while(dr.Read())
+
+                    while (dr.Read())
                     {
 
                         int accountType = dr.GetInt16(7);
 
-                        if(accountType == Account_Type.Current_Account)
+                        if (accountType == Account_Type.Current_Account)
                         {
                             Current_Account ca = new Current_Account();
                             ca.accountNo = dr.GetString(0);
@@ -121,6 +121,7 @@ namespace Banking_Application
 
         public String addBankAccount(Bank_Account ba) 
         {
+            
 
             if (ba.GetType() == typeof(Current_Account))
                 ba = (Current_Account)ba;
