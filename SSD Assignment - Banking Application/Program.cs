@@ -22,7 +22,7 @@ namespace Banking_Application
                 Console.WriteLine("2. Close Bank Account");
                 Console.WriteLine("3. View Account Information");
                 Console.WriteLine("4. Make Lodgement");
-                Console.WriteLine("5. Make Withdrawal");
+                Console.WriteLine("5. Make Withdrawal"); 
                 Console.WriteLine("6. Exit"); 
                 Console.WriteLine("CHOOSE OPTION:");
                 String option = Console.ReadLine();
