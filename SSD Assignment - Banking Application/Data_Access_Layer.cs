@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using Microsoft.Data.Sqlite;
 
 namespace Banking_Application
@@ -132,6 +133,7 @@ namespace Banking_Application
 
             using (var connection = getDatabaseConnection())
             {
+           // https://learn.microsoft.com/en-us/dotnet/standard/data/sqlite/parameters
                 connection.Open();
                 var command = connection.CreateCommand();
                 command.CommandText =

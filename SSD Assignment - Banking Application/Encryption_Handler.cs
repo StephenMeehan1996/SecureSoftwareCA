@@ -25,7 +25,7 @@ namespace SSD_Assignment___Banking_Application
 
             if (aesInstance == null) // if AES instance is null get/generate key
             {
-              
+
                 String crypto_key_name = "key123 test9999";
                 CngProvider key_storage_provider = CngProvider.MicrosoftSoftwareKeyStorageProvider;
                 if (!CngKey.Exists(crypto_key_name, key_storage_provider))
@@ -38,7 +38,7 @@ namespace SSD_Assignment___Banking_Application
 
                     CngKey.Create(new CngAlgorithm("AES"), crypto_key_name, key_creation_parameters);
                 }
-               
+
                 aesInstance = new AesCng(crypto_key_name, key_storage_provider);
                 aesInstance.KeySize = 128;
                 aesInstance.Mode = CipherMode.CBC;
@@ -111,24 +111,24 @@ namespace SSD_Assignment___Banking_Application
 
             MemoryStream msEncrypt = new MemoryStream();
 
-          
-                    using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
-                    {
-                        byte[] valueBytes = Encoding.ASCII.GetBytes(propertyValue);
-                        csEncrypt.Write(valueBytes, 0, valueBytes.Length);
-                        csEncrypt.Dispose();//Closes CryptoStream
-                    }
+
+            using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
+            {
+                byte[] valueBytes = Encoding.ASCII.GetBytes(propertyValue);
+                csEncrypt.Write(valueBytes, 0, valueBytes.Length);
+                csEncrypt.Dispose();//Closes CryptoStream
+            }
             msEncrypt.Dispose();//Closes MemoryStream
 
             return Convert.ToBase64String(msEncrypt.ToArray());
-                
+
         }
 
         public static string DecryptProperty(string propertyValue, Aes aes)
         {
-            
+
             byte[] valueBytes = Convert.FromBase64String(propertyValue); //converts back into byte array 
-            ICryptoTransform decryptor = aes.CreateDecryptor(); 
+            ICryptoTransform decryptor = aes.CreateDecryptor();
 
             MemoryStream msDecrypt = new MemoryStream();
 
@@ -156,7 +156,7 @@ namespace SSD_Assignment___Banking_Application
                 address_line_3 = EncryptProperty(originalAccount.address_line_3, aes),
                 town = originalAccount.town,
                 balance = originalAccount.balance,
-                iv =  originalAccount.iv
+                iv = originalAccount.iv
             };
 
             return encryptedAccount;
