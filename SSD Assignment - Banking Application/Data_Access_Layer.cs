@@ -131,37 +131,83 @@ namespace Banking_Application
 
             accounts.Add(ba);
 
+           // using (var connection = getDatabaseConnection())
+           // {
+           //// https://learn.microsoft.com/en-us/dotnet/standard/data/sqlite/parameters
+           //     connection.Open();
+           //     var command = connection.CreateCommand();
+           //     command.CommandText =
+           //     @"
+           //         INSERT INTO Bank_Accounts VALUES(" +
+           //         "'" + ba.accountNo + "', " +
+           //         "'" + ba.name + "', " +
+           //         "'" + ba.address_line_1 + "', " +
+           //         "'" + ba.address_line_2 + "', " +
+           //         "'" + ba.address_line_3 + "', " +
+           //         "'" + ba.town + "', " +
+           //         ba.balance + ", " +
+           //         (ba.GetType() == typeof(Current_Account) ? 1 : 2) + ", ";
+
+           //     if (ba.GetType() == typeof(Current_Account))
+           //     {
+           //         Current_Account ca = (Current_Account)ba;
+           //         command.CommandText += ca.overdraftAmount + ", NULL)";
+           //     }
+
+           //     else
+           //     {
+           //         Savings_Account sa = (Savings_Account)ba;
+           //         command.CommandText += "NULL," + sa.interestRate + ")";
+           //     }
+
+           //     command.ExecuteNonQuery();
+
+           // }
+
             using (var connection = getDatabaseConnection())
             {
-           // https://learn.microsoft.com/en-us/dotnet/standard/data/sqlite/parameters
                 connection.Open();
                 var command = connection.CreateCommand();
                 command.CommandText =
-                @"
-                    INSERT INTO Bank_Accounts VALUES(" +
-                    "'" + ba.accountNo + "', " +
-                    "'" + ba.name + "', " +
-                    "'" + ba.address_line_1 + "', " +
-                    "'" + ba.address_line_2 + "', " +
-                    "'" + ba.address_line_3 + "', " +
-                    "'" + ba.town + "', " +
-                    ba.balance + ", " +
-                    (ba.GetType() == typeof(Current_Account) ? 1 : 2) + ", ";
+                    @"
+            INSERT INTO Bank_Accounts VALUES (
+                @accountNo, 
+                @name, 
+                @address_line_1, 
+                @address_line_2, 
+                @address_line_3, 
+                @town, 
+                @balance, 
+                @accountType, 
+                @overdraftAmount, 
+                @interestRate
+            )
+        ";
+
+                command.Parameters.AddWithValue("@accountNo", ba.accountNo);
+                command.Parameters.AddWithValue("@name", ba.name);
+                command.Parameters.AddWithValue("@address_line_1", ba.address_line_1);
+                command.Parameters.AddWithValue("@address_line_2", ba.address_line_2);
+                command.Parameters.AddWithValue("@address_line_3", ba.address_line_3);
+                command.Parameters.AddWithValue("@town", ba.town);
+                command.Parameters.AddWithValue("@balance", ba.balance);
 
                 if (ba.GetType() == typeof(Current_Account))
                 {
                     Current_Account ca = (Current_Account)ba;
-                    command.CommandText += ca.overdraftAmount + ", NULL)";
+                    command.Parameters.AddWithValue("@accountType", 1);
+                    command.Parameters.AddWithValue("@overdraftAmount", ca.overdraftAmount);
+                    command.Parameters.AddWithValue("@interestRate", DBNull.Value);
                 }
-
                 else
                 {
                     Savings_Account sa = (Savings_Account)ba;
-                    command.CommandText += "NULL," + sa.interestRate + ")";
+                    command.Parameters.AddWithValue("@accountType", 2);
+                    command.Parameters.AddWithValue("@overdraftAmount", DBNull.Value);
+                    command.Parameters.AddWithValue("@interestRate", sa.interestRate);
                 }
 
                 command.ExecuteNonQuery();
-
             }
 
             return ba.accountNo;
@@ -210,9 +256,11 @@ namespace Banking_Application
                 {
                     connection.Open();
                     var command = connection.CreateCommand();
-                    command.CommandText = "DELETE FROM Bank_Accounts WHERE accountNo = '" + toRemove.accountNo + "'";
-                    command.ExecuteNonQuery();
+                    command.CommandText = "DELETE FROM Bank_Accounts WHERE accountNo = @accountNo";
 
+                    command.Parameters.AddWithValue("@accountNo", toRemove.accountNo);
+
+                    command.ExecuteNonQuery();
                 }
 
                 return true;
@@ -246,9 +294,12 @@ namespace Banking_Application
                 {
                     connection.Open();
                     var command = connection.CreateCommand();
-                    command.CommandText = "UPDATE Bank_Accounts SET balance = " + toLodgeTo.balance + " WHERE accountNo = '" + toLodgeTo.accountNo + "'";
-                    command.ExecuteNonQuery();
+                    command.CommandText = "UPDATE Bank_Accounts SET balance = @balance WHERE accountNo = @accountNo";
 
+                    command.Parameters.AddWithValue("@balance", toLodgeTo.balance);
+                    command.Parameters.AddWithValue("@accountNo", toLodgeTo.accountNo);
+
+                    command.ExecuteNonQuery();
                 }
 
                 return true;
@@ -283,9 +334,12 @@ namespace Banking_Application
                 {
                     connection.Open();
                     var command = connection.CreateCommand();
-                    command.CommandText = "UPDATE Bank_Accounts SET balance = " + toWithdrawFrom.balance + " WHERE accountNo = '" + toWithdrawFrom.accountNo + "'";
-                    command.ExecuteNonQuery();
+                    command.CommandText = "UPDATE Bank_Accounts SET balance = @balance WHERE accountNo = @accountNo";
 
+                    command.Parameters.AddWithValue("@balance", toWithdrawFrom.balance);
+                    command.Parameters.AddWithValue("@accountNo", toWithdrawFrom.accountNo);
+
+                    command.ExecuteNonQuery();
                 }
 
                 return true;

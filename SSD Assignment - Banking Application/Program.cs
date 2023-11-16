@@ -1,8 +1,12 @@
 ﻿using SSD_Assignment___Banking_Application;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 using System.Linq;
 using System.Text;
+using System.Security.Principal;
+using System.Diagnostics.Eventing.Reader;
 
 namespace Banking_Application
 {
@@ -17,8 +21,20 @@ namespace Banking_Application
         {
             
             Data_Access_Layer dal = Data_Access_Layer.getInstance();
-            
-             dal.loadBankAccounts();
+            EventLogger eventLogger = new EventLogger("Application", "Banking-App");
+            Encryption_Handler encryption_handler = new Encryption_Handler();
+
+            //eventLogger.ReadAllEvents();
+            //eventLogger.WriteEvent("This is a test event.", EventLogEntryType.Information);
+            //EventRecord lastEvent = eventLogger.ReadLastEvent();
+            //if (lastEvent != null)
+            //{
+            //    Console.WriteLine($"Last Event ID: {lastEvent.Id}");
+            //    Console.WriteLine($"Last Event Level: {lastEvent.LevelDisplayName}");
+            //    Console.WriteLine($"Last Event Message: {lastEvent.FormatDescription()}");
+            //}
+
+            dal.loadBankAccounts();
             bool running = true;
 
             do
@@ -203,21 +219,22 @@ namespace Banking_Application
 
                         //Encrypt here//
                      
-                        Bank_Account ea = Encryption_Handler.EncrypCurrentAccount(ba); // encrypt bank account
+                        Bank_Account ea = encryption_handler.EncrypCurrentAccount(ba); // encrypt bank account
                         Console.WriteLine("\nEncrypted Bank Account");
                         Console.WriteLine("---------------------------");
                         Console.WriteLine(ea.ToString()); //print
                         Console.WriteLine("---------------------------\n");
 
                         String accNo = dal.addBankAccount(ea); // add encrypted bank account
+                        Console.WriteLine("New Account Number Is: " + ba.accountNo); // print account number
 
                         Console.WriteLine("Decrypted Bank Account");
                         Console.WriteLine("---------------------------");
-                        Bank_Account da = Encryption_Handler.DecrypCurrentAccount(ea); // decrypted account
+                        Bank_Account da = encryption_handler.DecrypCurrentAccount(ea); // decrypted account
                         Console.WriteLine(da.ToString());
                         Console.WriteLine("---------------------------\n");
 
-                        Console.WriteLine("New Account Number Is: " + ba.accountNo); // print account number
+                    
 
                         break;
 
