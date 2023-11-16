@@ -179,7 +179,7 @@ namespace Banking_Application
                                 }
 
                             } while (overdraftAmount < 0);
-                            byte[] iv = Encryption_Handler.CreateIV();
+                            byte[] iv = encryption_handler.CreateIV();
                             string accountNo = System.Guid.NewGuid().ToString();
 
 
@@ -212,7 +212,7 @@ namespace Banking_Application
                                 }
 
                             } while (interestRate < 0);
-                            byte[] iv = Encryption_Handler.CreateIV(); // create account random IV
+                            byte[] iv = encryption_handler.CreateIV(); // create account random IV
                             string accountNo = System.Guid.NewGuid().ToString(); // Create account num
                             ba = new Savings_Account(accountNo,name, addressLine1, addressLine2, addressLine3, town, balance, interestRate, iv);
                         }
