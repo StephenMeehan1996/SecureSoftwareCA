@@ -13,33 +13,37 @@ namespace SSD_Assignment___Banking_Application
 {
     public class Encryption_Handler
     {
-       // private static Aes aesInstance;
+        private Aes aesInstance;
 
-        private Aes GenKey(byte[] iv)
+        public  Aes genKey(byte[] iv)
+
         {
             Console.WriteLine("\n\nPassed in IV {0}", string.Join(", ", iv));
             Console.WriteLine("Base64 Encoded IV: " + Convert.ToBase64String(iv));
             Console.WriteLine("\nGenerate and store key");
             Console.WriteLine("-----------------------");
 
-            String crypto_key_name = "key123 test9999";
-            CngProvider key_storage_provider = CngProvider.MicrosoftSoftwareKeyStorageProvider;
-
-            if (!CngKey.Exists(crypto_key_name, key_storage_provider))
+            if (aesInstance == null) // if AES instance is null get/generate key
             {
-                Console.WriteLine("Inside Key Gen IF");
-                CngKeyCreationParameters key_creation_parameters = new CngKeyCreationParameters()
+
+                String crypto_key_name = "key123 test9999";
+                CngProvider key_storage_provider = CngProvider.MicrosoftSoftwareKeyStorageProvider;
+                if (!CngKey.Exists(crypto_key_name, key_storage_provider))
                 {
-                    Provider = key_storage_provider
-                };
+                    Console.WriteLine("Inside Key Gen IF");
+                    CngKeyCreationParameters key_creation_parameters = new CngKeyCreationParameters()
+                    {
+                        Provider = key_storage_provider
+                    };
 
-                CngKey.Create(new CngAlgorithm("AES"), crypto_key_name, key_creation_parameters);
+                    CngKey.Create(new CngAlgorithm("AES"), crypto_key_name, key_creation_parameters);
+                }
+
+                aesInstance = new AesCng(crypto_key_name, key_storage_provider);
+                aesInstance.KeySize = 128;
+                aesInstance.Mode = CipherMode.CBC;
+                aesInstance.Padding = PaddingMode.PKCS7;
             }
-
-            Aes aesInstance = new AesCng(crypto_key_name, key_storage_provider);
-            aesInstance.KeySize = 128;
-            aesInstance.Mode = CipherMode.CBC;
-            aesInstance.Padding = PaddingMode.PKCS7;
 
             Console.WriteLine("AES Key: " + Convert.ToBase64String(aesInstance.Key)); // print key
             return aesInstance;
@@ -118,28 +122,52 @@ namespace SSD_Assignment___Banking_Application
 
             return Convert.ToBase64String(msEncrypt.ToArray());
 
+            //MemoryStream msEncrypt = new MemoryStream();
+
+
+            //using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
+            //{
+            //    byte[] valueBytes = Encoding.ASCII.GetBytes(propertyValue);
+            //    csEncrypt.Write(valueBytes, 0, valueBytes.Length);
+            //    csEncrypt.Dispose();//Closes CryptoStream
+            //}
+            //msEncrypt.Dispose();//Closes MemoryStream
+
+            //return Convert.ToBase64String(msEncrypt.ToArray());
+
         }
 
         private string DecryptProperty(string propertyValue, Aes aes)
         {
 
-            byte[] valueBytes = Convert.FromBase64String(propertyValue);
+            //////////////
 
-            using (MemoryStream msDecrypt = new MemoryStream(valueBytes))
-            using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, aes.CreateDecryptor(), CryptoStreamMode.Read))
-            using (StreamReader srDecrypt = new StreamReader(csDecrypt))
-            {
-                string plaintext = srDecrypt.ReadToEnd();
-                return plaintext.TrimEnd('\0'); // Trim trailing null characters if present
-            }
+            byte[] valueBytes = Convert.FromBase64String(propertyValue); //converts back into byte array 
+            ICryptoTransform decryptor = aes.CreateDecryptor();
+
+            MemoryStream msDecrypt = new MemoryStream();
+
+            CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Write);
+            csDecrypt.Write(valueBytes, 0, valueBytes.Length);
+            csDecrypt.Dispose();//Closes CryptoStream
+
+            byte[] plaintext_data = msDecrypt.ToArray();
+            string text = Encoding.ASCII.GetString(plaintext_data);
+            msDecrypt.Dispose();//Closes
+
+            return text;
+
+
+
 
 
         }
 
         public Bank_Account EncrypCurrentAccount(Bank_Account originalAccount)
         {
-            using (Aes aes = GenKey(originalAccount.iv))
-            {
+            Aes aes = genKey(originalAccount.iv);
+
+          
                 Current_Account encryptedAccount = new Current_Account
                 {
                     accountNo = EncryptProperty(originalAccount.accountNo, aes),
@@ -151,15 +179,17 @@ namespace SSD_Assignment___Banking_Application
                     balance = originalAccount.balance,
                     iv = originalAccount.iv
                 };
-
+              
                 return encryptedAccount;
-            }
-        }//encrypt and dispose
+            
+
+         
+        }
 
         public Bank_Account DecrypCurrentAccount(Bank_Account originalAccount)
         {
-            using (Aes aes = GenKey(originalAccount.iv))
-            {
+            Aes aes = genKey(originalAccount.iv);
+          
                 Current_Account encryptedAccount = new Current_Account
                 {
                     accountNo = DecryptProperty(originalAccount.accountNo, aes),
@@ -174,6 +204,6 @@ namespace SSD_Assignment___Banking_Application
 
                 return encryptedAccount;
             }
-        }
+        
     }
 }
