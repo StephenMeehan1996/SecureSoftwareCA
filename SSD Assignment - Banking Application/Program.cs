@@ -34,7 +34,8 @@ namespace Banking_Application
             //    Console.WriteLine($"Last Event Message: {lastEvent.FormatDescription()}");
             //}
 
-            //dal.loadBankAccounts();
+            dal.loadBankAccountNumbers();
+
             bool running = true;
 
             do
@@ -194,25 +195,25 @@ namespace Banking_Application
                             Console.WriteLine(ea.ToString()); //print
                             Console.WriteLine("---------------------------\n");
 
+                         
+
+                            accNo = dal.addBankAccount(ea); // add encrypted bank account
+
                             string hash = encryption_handler.serializeObject(ea);
                             h = new(ea.accountNo, hash);
 
-                            accNo = dal.addBankAccount(ea); // add encrypted bank account
+                            Console.WriteLine("\n---------------------------");
                             Console.WriteLine("New Account Number Is: " + ca.accountNo); // print account number
+                            Console.WriteLine("Encryted: " + ea.accountNo);
+                            Console.WriteLine("test prop: " + encryption_handler.EncryptForAccountSearch(ca.accountNo));
+                            Console.WriteLine("---------------------------\n");
 
                             Console.WriteLine("Decrypted Bank Account");
                             Console.WriteLine("---------------------------");
                             Bank_Account da = encryption_handler.DecrypCurrentAccount(ea); // decrypted account
                             Console.WriteLine(da.ToString());
                             Console.WriteLine("---------------------------\n");
-
-                            Console.WriteLine(h.ToString());
-                            string test = dal.addHash(h);
-                            Console.WriteLine(test);
-
-                            test = dal.updateHash(h);
-                            Console.WriteLine(test);
-
+                            dal.addHash(h);
                         }
 
                         else
@@ -251,11 +252,13 @@ namespace Banking_Application
                             Console.WriteLine(ea.ToString()); //print
                             Console.WriteLine("---------------------------\n");
 
-                            string hash = encryption_handler.serializeObject(ea);
-                            h = new(ea.accountNo, hash);
 
                             accNo = dal.addBankAccount(ea); // add encrypted bank account
                             Console.WriteLine("New Account Number Is: " + sa.accountNo); // print account number
+
+
+                            string hash = encryption_handler.serializeObject(ea);
+                            h = new(ea.accountNo, hash);
 
                             Console.WriteLine("Decrypted Bank Account");
                             Console.WriteLine("---------------------------");
@@ -263,21 +266,10 @@ namespace Banking_Application
                             Console.WriteLine(da.ToString());
                             Console.WriteLine("---------------------------\n");
 
-                            Console.WriteLine(h.ToString());
-                            string test = dal.addHash(h);
-                            Console.WriteLine(test);
-
-                            test = dal.updateHash(h);
-                            Console.WriteLine(test);
-
+                          
+                            dal.addHash(h);
+                          
                         }
-
-                        //Encrypt here//
-
-
-                      
-
-
 
                         break;
 
@@ -322,6 +314,7 @@ namespace Banking_Application
                     case "3":
                         Console.WriteLine("Enter Account Number: ");
                         accNo = Console.ReadLine();
+                 
 
                         ba = dal.findBankAccountByAccNo(accNo);
 

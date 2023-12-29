@@ -15,15 +15,16 @@ namespace SSD_Assignment___Banking_Application
     public class Encryption_Handler
     {
         private Aes aesInstance;
-       // private Aes aesInstanceECB;
+        private Aes aesInstanceECB;
 
-        public Aes genKey(byte[] iv)
+        public Aes genKey(byte[] iv){
 
-        {
-            Console.WriteLine("\n\nPassed in IV {0}", string.Join(", ", iv));
-            Console.WriteLine("Base64 Encoded IV: " + Convert.ToBase64String(iv));
-            Console.WriteLine("\nGenerate and store key");
+         
+            Console.WriteLine("\n\nGenerate and store key");
             Console.WriteLine("-----------------------");
+
+            Console.WriteLine("\nPassed in IV {0}", string.Join(", ", iv));
+            Console.WriteLine("\nBase64 Encoded IV: " + Convert.ToBase64String(iv));
 
             if (aesInstance == null) // if AES instance is null get/generate key
             {
@@ -49,17 +50,16 @@ namespace SSD_Assignment___Banking_Application
             }
 
             Console.WriteLine("AES Key: " + Convert.ToBase64String(aesInstance.Key)); // print key
+            Console.WriteLine("-----------------------\n\n");
             return aesInstance;
         }
 
-        public Aes genECBKey()
-
-        {
+        public Aes genECBKey() {
   
-            Console.WriteLine("\nGenerate and store key");
+            Console.WriteLine("\n\nGenerate ECB Key");
             Console.WriteLine("-----------------------");
 
-            if (aesInstance == null) // if AES instance is null get/generate key
+            if (aesInstanceECB == null) // if AES instance is null get/generate key
             {
 
                 String crypto_key_name = "SSD_Encryption_Key_2023";
@@ -75,14 +75,15 @@ namespace SSD_Assignment___Banking_Application
                     CngKey.Create(new CngAlgorithm("AES"), crypto_key_name, key_creation_parameters);
                 }
 
-                aesInstance = new AesCng(crypto_key_name, key_storage_provider);
-                aesInstance.KeySize = 128;
-                aesInstance.Mode = CipherMode.ECB;
-                aesInstance.Padding = PaddingMode.PKCS7;
+                aesInstanceECB = new AesCng(crypto_key_name, key_storage_provider);
+                aesInstanceECB.KeySize = 128;
+                aesInstanceECB.Mode = CipherMode.ECB;
+                aesInstanceECB.Padding = PaddingMode.PKCS7;
             }
 
-            Console.WriteLine("AES Key: " + Convert.ToBase64String(aesInstance.Key)); // print key
-            return aesInstance;
+            Console.WriteLine("AES Key: " + Convert.ToBase64String(aesInstanceECB.Key)); // print key
+            Console.WriteLine("-----------------------\n\n");
+            return aesInstanceECB;
         }
 
         public byte[] CreateIV()

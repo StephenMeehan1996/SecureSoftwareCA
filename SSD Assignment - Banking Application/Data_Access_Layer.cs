@@ -14,8 +14,11 @@ namespace Banking_Application
     {
 
         private List<Bank_Account> accounts;
+        List<string> accountNumbers = new List<string>(); // List to store account numbers
+
         public static String databaseName = "Banking Database.db";
         private static Data_Access_Layer instance = new Data_Access_Layer();
+        Encryption_Handler encryption_handler = new Encryption_Handler();
 
         private Data_Access_Layer()//Singleton Design Pattern (For Concurrency Control) - Use getInstance() Method Instead.
         {
@@ -126,7 +129,86 @@ namespace Banking_Application
             }
         }
 
+        public void loadBankAccountNumbers()
+        {
+            if (!File.Exists(Data_Access_Layer.databaseName))
+                initialiseDatabase();
+            else
+            {
+                using (var connection = getDatabaseConnection())
+                {
+                    connection.Open();
+                    var command = connection.CreateCommand();
+                    command.CommandText = "SELECT accountNo FROM Bank_Accounts"; // Select only the accountNo column
+                    SqliteDataReader dr = command.ExecuteReader();
 
+                    while (dr.Read())
+                    {
+                        string accountNumber = dr["accountNo"].ToString(); // Retrieve account number
+                        accountNumbers.Add(accountNumber); // Add account number to the list
+                    }
+                }
+            }
+
+            foreach (var item in accountNumbers)
+            {
+                Console.WriteLine(item);
+
+            }
+        }
+
+        public Bank_Account loadBankAccount(string accountNumberToFind)
+        {
+            Bank_Account foundAccount = null; // Variable to store the found account
+
+            if (!File.Exists(Data_Access_Layer.databaseName))
+                initialiseDatabase();
+            else
+            {
+                using (var connection = getDatabaseConnection())
+                {
+                    connection.Open();
+                    var command = connection.CreateCommand();
+                    command.CommandText = "SELECT * FROM Bank_Accounts WHERE accountNo = @AccountNumber";
+                    command.Parameters.AddWithValue("@AccountNumber", accountNumberToFind);
+                    SqliteDataReader dr = command.ExecuteReader();
+
+                    if (dr.Read())
+                    {
+                        int accountType = dr.GetInt16(7);
+
+                        if (accountType == Account_Type.Current_Account)
+                        {
+                            Current_Account ca = new Current_Account();
+                            ca.accountNo = dr.GetString(0);
+                            ca.name = dr.GetString(1);
+                            ca.address_line_1 = dr.GetString(2);
+                            ca.address_line_2 = dr.GetString(3);
+                            ca.address_line_3 = dr.GetString(4);
+                            ca.town = dr.GetString(5);
+                            ca.balance = dr.GetDouble(6);
+                            ca.overdraftAmount = dr.GetDouble(8);
+                            foundAccount = ca;
+                        }
+                        else
+                        {
+                            Savings_Account sa = new Savings_Account();
+                            sa.accountNo = dr.GetString(0);
+                            sa.name = dr.GetString(1);
+                            sa.address_line_1 = dr.GetString(2);
+                            sa.address_line_2 = dr.GetString(3);
+                            sa.address_line_3 = dr.GetString(4);
+                            sa.town = dr.GetString(5);
+                            sa.balance = dr.GetDouble(6);
+                            sa.interestRate = dr.GetDouble(9);
+                            foundAccount = sa;
+                        }
+                    }
+                }
+            }
+
+            return foundAccount; // Return the found account or null if not found
+        }
 
         public String addBankAccount(Bank_Account ba)
         {
@@ -257,15 +339,21 @@ namespace Banking_Application
 
 
         public Bank_Account findBankAccountByAccNo(String accNo) 
-        { 
+        {
+            loadBankAccountNumbers();
 
-        
-            foreach(Bank_Account ba in accounts)
+            string encryptedNum = encryption_handler.EncryptForAccountSearch(accNo);
+            Console.WriteLine("\nEncryptedNumber: " + encryptedNum + "\n");
+
+
+            foreach (string num in accountNumbers)
             {
+                //Console.WriteLine(num);
 
-                if (ba.accountNo.Equals(accNo))
-                {
-                    return ba;
+                if (num.Equals(encryptedNum))
+                {   
+                    Console.WriteLine($"{num}");
+                    return loadBankAccount(num);
                 }
 
             }
