@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -19,6 +20,9 @@ namespace Banking_Application
         public static String databaseName = "Banking Database.db";
         private static Data_Access_Layer instance = new Data_Access_Layer();
         Encryption_Handler encryption_handler = new Encryption_Handler();
+        Bank_Account ba;
+        string accNo;
+        Hash h;
 
         private Data_Access_Layer()//Singleton Design Pattern (For Concurrency Control) - Use getInstance() Method Instead.
         {
@@ -73,6 +77,35 @@ namespace Banking_Application
 
                 command.ExecuteNonQuery();
                 
+            }
+        }
+
+        public string HandleBankAccountInsert(Bank_Account ba)
+        {
+            if (ba.GetType() == typeof(Current_Account))
+            {
+                Bank_Account ca = encryption_handler.EncrypCurrentAccount((Current_Account)ba); // encrypt bank account
+              
+                string hash = encryption_handler.serializeObject(ca);
+                h = new(ca.accountNo, hash);
+
+                addBankAccount(ca); 
+
+                addHash(h);
+
+                return (string.Format($"\n--------------------------------\nBank Account Succesfully Added\nYour Account number is: {ba.accountNo} \n----------------------------\n"));
+            }
+            else
+            {
+                Bank_Account sa = encryption_handler.EncryptSavingsAccount((Savings_Account)ba); // encrypt bank account
+            
+                string hash = encryption_handler.serializeObject(sa);
+                h = new(sa.accountNo, hash);
+
+                addBankAccount(sa); 
+                addHash(h);
+
+                return (string.Format($"\n--------------------------------\nBank Account Succesfully Added\nYour Account number is: {ba.accountNo} \n----------------------------\n"));
             }
         }
 
@@ -149,12 +182,6 @@ namespace Banking_Application
                         accountNumbers.Add(accountNumber); // Add account number to the list
                     }
                 }
-            }
-
-            foreach (var item in accountNumbers)
-            {
-                Console.WriteLine(item);
-
             }
         }
 
@@ -359,21 +386,17 @@ namespace Banking_Application
             loadBankAccountNumbers();
 
             string encryptedNum = encryption_handler.EncryptForAccountSearch(accNo);
-            Console.WriteLine("\nEncryptedNumber: " + encryptedNum + "\n");
-
-
+           
             foreach (string num in accountNumbers)
             {
                 //Console.WriteLine(num);
 
                 if (num.Equals(encryptedNum))
                 {   
-                    Console.WriteLine($"{num}");
                     return loadBankAccount(num);
                 }
 
             }
-
             return null; 
         }
 
@@ -403,25 +426,15 @@ namespace Banking_Application
 
         public bool lodge(String accNo, double amountToLodge)
         {
-
-            Bank_Account toLodgeTo = null;
-
-            foreach (Bank_Account ba in accounts)
-            {
-
-                if (ba.accountNo.Equals(accNo))
-                {
-                    ba.lodge(amountToLodge);
-                    toLodgeTo = ba;
-                    break;
-                }
-
-            }
-
-            if (toLodgeTo == null)
+            if (accNo == null)
                 return false;
+
             else
             {
+                Bank_Account ba = findBankAccountByAccNo(accNo);
+                
+                double newBalance = ba.balance += amountToLodge;
+                string encryptedNum = encryption_handler.EncryptForAccountSearch(ba.accountNo);
 
                 using (var connection = getDatabaseConnection())
                 {
@@ -429,12 +442,20 @@ namespace Banking_Application
                     var command = connection.CreateCommand();
                     command.CommandText = "UPDATE Bank_Accounts SET balance = @balance WHERE accountNo = @accountNo";
 
-                    command.Parameters.AddWithValue("@balance", toLodgeTo.balance);
-                    command.Parameters.AddWithValue("@accountNo", toLodgeTo.accountNo);
+                    command.Parameters.AddWithValue("@balance",  newBalance);
+                    command.Parameters.AddWithValue("@accountNo", encryptedNum);
 
                     command.ExecuteNonQuery();
+
+                    Console.WriteLine("\n------------------------");
+                    Console.WriteLine($"Lodge Successfull - New Balance: {newBalance}");
+                    Console.WriteLine("------------------------\n");
                 }
 
+                ba = null;
+                encryptedNum= null;
+                GC.Collect();
+        
                 return true;
             }
 
@@ -442,26 +463,25 @@ namespace Banking_Application
 
         public bool withdraw(String accNo, double amountToWithdraw)
         {
+            Bank_Account ba = findBankAccountByAccNo(accNo);
+            double newBalance = ba.balance -= amountToWithdraw;
+            double maxWidthdraw;
 
-            Bank_Account toWithdrawFrom = null;
-            bool result = false;
-
-            foreach (Bank_Account ba in accounts)
+            if (ba.GetType() == typeof(Current_Account))
             {
-
-                if (ba.accountNo.Equals(accNo))
-                {
-                    result = ba.withdraw(amountToWithdraw);
-                    toWithdrawFrom = ba;
-                    break;
-                }
-
+                Current_Account ca = (Current_Account)ba;
+                maxWidthdraw= ca.balance + ca.overdraftAmount;
+                Console.WriteLine(maxWidthdraw);
+                ca = null; // For Garbage
             }
-
-            if (toWithdrawFrom == null || result == false)
-                return false;
             else
             {
+                maxWidthdraw = ba.balance;
+            }
+
+            if (newBalance < maxWidthdraw)
+              {
+                string encryptedNum = encryption_handler.EncryptForAccountSearch(ba.accountNo);
 
                 using (var connection = getDatabaseConnection())
                 {
@@ -469,15 +489,24 @@ namespace Banking_Application
                     var command = connection.CreateCommand();
                     command.CommandText = "UPDATE Bank_Accounts SET balance = @balance WHERE accountNo = @accountNo";
 
-                    command.Parameters.AddWithValue("@balance", toWithdrawFrom.balance);
-                    command.Parameters.AddWithValue("@accountNo", toWithdrawFrom.accountNo);
+                    command.Parameters.AddWithValue("@balance", newBalance);
+                    command.Parameters.AddWithValue("@accountNo", encryptedNum);
 
                     command.ExecuteNonQuery();
+
+                    Console.WriteLine("\n------------------------");
+                    Console.WriteLine($"Widthdraw Successfull - New Balance: {newBalance}");
+                    Console.WriteLine("------------------------\n");
                 }
 
+                encryptedNum = null;
+                ba = null;
+                GC.Collect();
+     
                 return true;
-            }
 
+            }
+            return false;
         }
 
     }

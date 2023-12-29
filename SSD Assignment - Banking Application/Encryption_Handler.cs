@@ -14,23 +14,10 @@ namespace SSD_Assignment___Banking_Application
 {
     public class Encryption_Handler
     {
-        private Aes aesInstance;
-        private Aes aesInstanceECB;
-
         public Aes GenOrCreateKey(byte[]? iv, string mode){
 
-         
-            Console.WriteLine("\n\nGenerate and store key");
-            Console.WriteLine("-----------------------");
-
-            if(iv != null)
-            {
-                Console.WriteLine("\nPassed in IV {0}", string.Join(", ", iv));
-                Console.WriteLine("\nBase64 Encoded IV: " + Convert.ToBase64String(iv));
-            }
-
             String crypto_key_name = "SSD_Encryption_Key_2023";
-                CngProvider key_storage_provider = CngProvider.MicrosoftSoftwareKeyStorageProvider;
+            CngProvider key_storage_provider = CngProvider.MicrosoftSoftwareKeyStorageProvider;
 
                 if (!CngKey.Exists(crypto_key_name, key_storage_provider))
                 {
@@ -43,7 +30,7 @@ namespace SSD_Assignment___Banking_Application
                     CngKey.Create(new CngAlgorithm("AES"), crypto_key_name, key_creation_parameters);
                 }
 
-                aesInstance = new AesCng(crypto_key_name, key_storage_provider);
+            Aes aesInstance = new AesCng(crypto_key_name, key_storage_provider);
 
                 if(mode == "CBC"){
                     aesInstance.Mode = CipherMode.CBC;
@@ -56,35 +43,6 @@ namespace SSD_Assignment___Banking_Application
             aesInstance.Padding = PaddingMode.PKCS7;
             return aesInstance;
         }
-
-        public Aes genECBKey() {
-  
-            Console.WriteLine("\n\nGenerate ECB Key");
-            Console.WriteLine("-----------------------");
-
-          
-
-                String crypto_key_name = "SSD_Encryption_Key_2023";
-                CngProvider key_storage_provider = CngProvider.MicrosoftSoftwareKeyStorageProvider;
-                if (!CngKey.Exists(crypto_key_name, key_storage_provider))
-                {
-                    Console.WriteLine("Inside Key Gen IF");
-                    CngKeyCreationParameters key_creation_parameters = new CngKeyCreationParameters()
-                    {
-                        Provider = key_storage_provider
-                    };
-
-                    CngKey.Create(new CngAlgorithm("AES"), crypto_key_name, key_creation_parameters);
-                }
-
-                aesInstanceECB = new AesCng(crypto_key_name, key_storage_provider);
-                aesInstanceECB.Mode = CipherMode.ECB;
-                aesInstanceECB.Padding = PaddingMode.PKCS7;
-            
-
-            return aesInstanceECB;
-        }
-
         public byte[] CreateIV()
         {
             RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider();
@@ -153,8 +111,10 @@ namespace SSD_Assignment___Banking_Application
                     overdraftAmount= originalAccount.overdraftAmount,
                     iv = originalAccount.iv
                 };
-              
-                return encryptedAccount;
+            aes = null;
+            ecb = null;
+            GC.Collect();
+            return encryptedAccount;
         }
 
         public Savings_Account EncryptSavingsAccount(Savings_Account originalAccount)
@@ -175,17 +135,16 @@ namespace SSD_Assignment___Banking_Application
                 interestRate = originalAccount.interestRate,
                 iv = originalAccount.iv,
             };
-
+            aes.Clear();
+            ecb.Clear();
+            GC.Collect();
             return encryptedAccount;
         }
 
         public Current_Account DecrypCurrentAccount(Current_Account originalAccount)
         {
-            Console.WriteLine("From Current Account HAndler: " + originalAccount.iv);
             Aes aes = GenOrCreateKey(originalAccount.iv, "CBC");
             Aes ecb = GenOrCreateKey(originalAccount.iv, "ECB");
-
-       
 
             Current_Account decryptedAccount = new Current_Account {
                     accountNo = DecryptProperty(originalAccount.accountNo, ecb),
@@ -198,7 +157,10 @@ namespace SSD_Assignment___Banking_Application
                     overdraftAmount = originalAccount.overdraftAmount,
                     iv = originalAccount.iv,
                 };
-             return decryptedAccount;
+            aes.Clear();
+            ecb.Clear();
+            GC.Collect();
+            return decryptedAccount;
          }
 
         public Savings_Account DecryptSavingsAccount(Savings_Account originalAccount) {
@@ -220,8 +182,10 @@ namespace SSD_Assignment___Banking_Application
             
             };
 
+            aes.Clear();
+            ecb.Clear();
+            GC.Collect();
             return decryptedAccount;
-
         }
 
        public string serializeObject(Bank_Account b) {

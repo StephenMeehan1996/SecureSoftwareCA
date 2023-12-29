@@ -25,7 +25,6 @@ namespace Banking_Application
             Encryption_Handler encryption_handler = new Encryption_Handler();
             Bank_Account ba;
             string accNo;
-            Hash h;
 
             //eventLogger.ReadAllEvents();
             //eventLogger.WriteEvent("This is a test event.", EventLogEntryType.Information);
@@ -188,32 +187,7 @@ namespace Banking_Application
                             byte[] iv = encryption_handler.CreateIV();
                             string accountNo = System.Guid.NewGuid().ToString();
 
-                            Current_Account ca = new Current_Account(accountNo, name, addressLine1, addressLine2, addressLine3, town, balance, overdraftAmount, iv);
-
-                            Current_Account ea = encryption_handler.EncrypCurrentAccount(ca); // encrypt bank account
-                            Console.WriteLine("\nEncrypted Bank Account");
-                            Console.WriteLine("---------------------------");
-                            Console.WriteLine(ea.ToString()); //print
-                            Console.WriteLine("---------------------------\n");
-
-                         
-
-                            accNo = dal.addBankAccount(ea); // add encrypted bank account
-                            string hash = encryption_handler.serializeObject(ea);
-                            h = new(ea.accountNo, hash);
-
-                            Console.WriteLine("\n---------------------------");
-                            Console.WriteLine("New Account Number Is: " + ca.accountNo); // print account number
-                            Console.WriteLine("Encryted: " + ea.accountNo);
-                            Console.WriteLine("test prop: " + encryption_handler.EncryptForAccountSearch(ca.accountNo));
-                            Console.WriteLine("---------------------------\n");
-
-                            Console.WriteLine("Decrypted Bank Account");
-                            Console.WriteLine("---------------------------");
-                            Bank_Account da = encryption_handler.DecrypCurrentAccount(ea); // decrypted account
-                            Console.WriteLine(da.ToString());
-                            Console.WriteLine("---------------------------\n");
-                            dal.addHash(h);
+                            ba = new Current_Account(accountNo, name, addressLine1, addressLine2, addressLine3, town, balance, overdraftAmount, iv);
                         }
 
                         else
@@ -244,34 +218,13 @@ namespace Banking_Application
                             } while (interestRate < 0);
                             byte[] iv = encryption_handler.CreateIV(); // create account random IV
                             string accountNo = System.Guid.NewGuid().ToString(); // Create account num
-                            Savings_Account sa = new Savings_Account(accountNo,name, addressLine1, addressLine2, addressLine3, town, balance, interestRate, iv);
+                            ba = new Savings_Account(accountNo,name, addressLine1, addressLine2, addressLine3, town, balance, interestRate, iv);
 
-                            Savings_Account ea = encryption_handler.EncryptSavingsAccount(sa); // encrypt bank account
-                            Console.WriteLine("\nEncrypted Bank Account");
-                            Console.WriteLine("---------------------------");
-                            Console.WriteLine(ea.ToString()); //print
-                            Console.WriteLine("---------------------------\n");
-
-
-                            accNo = dal.addBankAccount(ea); // add encrypted bank account
-                            Console.WriteLine("New Account Number Is: " + sa.accountNo); // print account number
-
-
-                            string hash = encryption_handler.serializeObject(ea);
-                            h = new(ea.accountNo, hash);
-
-                            Console.WriteLine("Decrypted Bank Account");
-                            Console.WriteLine("---------------------------");
-                            Bank_Account da = encryption_handler.DecryptSavingsAccount(ea); // decrypted account
-                            Console.WriteLine(da.ToString());
-                            Console.WriteLine("---------------------------\n");
-
-                          
-                            dal.addHash(h);
+                         
                           
                         }
 
-
+                        Console.WriteLine(dal.HandleBankAccountInsert(ba));
 
                         break;
 
@@ -327,7 +280,7 @@ namespace Banking_Application
                         }
                         else
                         {
-                            Console.WriteLine(ba.ToString());
+                            Console.WriteLine("\n" + ba.ToString());
 
                         }
 
@@ -392,7 +345,7 @@ namespace Banking_Application
                                 if (loopCount > 0)
                                     Console.WriteLine("INVALID AMOUNT ENTERED - PLEASE TRY AGAIN");
 
-                                Console.WriteLine("Enter Amount To Withdraw (€" + ba.getAvailableFunds() + " Available): ");
+                                Console.WriteLine("Enter Amount To Withdraw (€" + ba.balance + " Available): ");
                                 String amountToWithdrawString = Console.ReadLine();
 
                                 try
