@@ -46,8 +46,8 @@ namespace Banking_Application
         {
 
             return base.ToString() +
-                "Account Type: Current Account\n" +
-                "Overdraft Amount: " + overdraftAmount + "\n";
+
+            string.Format($"Account Type: Current Account\nOverdraft Amount: {overdraftAmount}\n");
 
         }
 

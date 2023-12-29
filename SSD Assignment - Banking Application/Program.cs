@@ -34,7 +34,7 @@ namespace Banking_Application
             //    Console.WriteLine($"Last Event Message: {lastEvent.FormatDescription()}");
             //}
 
-            dal.loadBankAccounts();
+            //dal.loadBankAccounts();
             bool running = true;
 
             do
@@ -50,7 +50,9 @@ namespace Banking_Application
                 Console.WriteLine("6. Exit");  
                 Console.WriteLine("CHOOSE OPTION:");
                 String option = Console.ReadLine();
-                
+
+
+               // encryption_handler.serializeObject();
                 switch(option)
                 {
                     case "1":
@@ -153,6 +155,8 @@ namespace Banking_Application
                         } while (balance < 0);
 
                         Bank_Account ba;
+                        string accNo;
+                        Hash h;
 
                         if (Convert.ToInt32(accountType) == Account_Type.Current_Account)
                         {
@@ -182,8 +186,33 @@ namespace Banking_Application
                             byte[] iv = encryption_handler.CreateIV();
                             string accountNo = System.Guid.NewGuid().ToString();
 
+                            Current_Account ca = new Current_Account(accountNo, name, addressLine1, addressLine2, addressLine3, town, balance, overdraftAmount, iv);
 
-                            ba = new Current_Account(accountNo,name, addressLine1, addressLine2, addressLine3, town, balance, overdraftAmount,iv);
+                            Current_Account ea = encryption_handler.EncrypCurrentAccount(ca); // encrypt bank account
+                            Console.WriteLine("\nEncrypted Bank Account");
+                            Console.WriteLine("---------------------------");
+                            Console.WriteLine(ea.ToString()); //print
+                            Console.WriteLine("---------------------------\n");
+
+                            string hash = encryption_handler.serializeObject(ea);
+                            h = new(ea.accountNo, hash);
+
+                            accNo = dal.addBankAccount(ea); // add encrypted bank account
+                            Console.WriteLine("New Account Number Is: " + ca.accountNo); // print account number
+
+                            Console.WriteLine("Decrypted Bank Account");
+                            Console.WriteLine("---------------------------");
+                            Bank_Account da = encryption_handler.DecrypCurrentAccount(ea); // decrypted account
+                            Console.WriteLine(da.ToString());
+                            Console.WriteLine("---------------------------\n");
+
+                            Console.WriteLine(h.ToString());
+                            string test = dal.addHash(h);
+                            Console.WriteLine(test);
+
+                            test = dal.updateHash(h);
+                            Console.WriteLine(test);
+
                         }
 
                         else
@@ -214,27 +243,41 @@ namespace Banking_Application
                             } while (interestRate < 0);
                             byte[] iv = encryption_handler.CreateIV(); // create account random IV
                             string accountNo = System.Guid.NewGuid().ToString(); // Create account num
-                            ba = new Savings_Account(accountNo,name, addressLine1, addressLine2, addressLine3, town, balance, interestRate, iv);
+                            Savings_Account sa = new Savings_Account(accountNo,name, addressLine1, addressLine2, addressLine3, town, balance, interestRate, iv);
+
+                            Savings_Account ea = encryption_handler.EncryptSavingsAccount(sa); // encrypt bank account
+                            Console.WriteLine("\nEncrypted Bank Account");
+                            Console.WriteLine("---------------------------");
+                            Console.WriteLine(ea.ToString()); //print
+                            Console.WriteLine("---------------------------\n");
+
+                            string hash = encryption_handler.serializeObject(ea);
+                            h = new(ea.accountNo, hash);
+
+                            accNo = dal.addBankAccount(ea); // add encrypted bank account
+                            Console.WriteLine("New Account Number Is: " + sa.accountNo); // print account number
+
+                            Console.WriteLine("Decrypted Bank Account");
+                            Console.WriteLine("---------------------------");
+                            Bank_Account da = encryption_handler.DecryptSavingsAccount(ea); // decrypted account
+                            Console.WriteLine(da.ToString());
+                            Console.WriteLine("---------------------------\n");
+
+                            Console.WriteLine(h.ToString());
+                            string test = dal.addHash(h);
+                            Console.WriteLine(test);
+
+                            test = dal.updateHash(h);
+                            Console.WriteLine(test);
+
                         }
 
                         //Encrypt here//
-                     
-                        Bank_Account ea = encryption_handler.EncrypCurrentAccount(ba); // encrypt bank account
-                        Console.WriteLine("\nEncrypted Bank Account");
-                        Console.WriteLine("---------------------------");
-                        Console.WriteLine(ea.ToString()); //print
-                        Console.WriteLine("---------------------------\n");
 
-                        String accNo = dal.addBankAccount(ea); // add encrypted bank account
-                        Console.WriteLine("New Account Number Is: " + ba.accountNo); // print account number
 
-                        Console.WriteLine("Decrypted Bank Account");
-                        Console.WriteLine("---------------------------");
-                        Bank_Account da = encryption_handler.DecrypCurrentAccount(ea); // decrypted account
-                        Console.WriteLine(da.ToString());
-                        Console.WriteLine("---------------------------\n");
+                      
 
-                    
+
 
                         break;
 

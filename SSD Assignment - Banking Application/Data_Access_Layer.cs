@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Microsoft.Data.Sqlite;
+using SSD_Assignment___Banking_Application;
 
 namespace Banking_Application
 {
@@ -46,7 +47,7 @@ namespace Banking_Application
                 connection.Open();
                 var command = connection.CreateCommand();
                 command.CommandText =
-                @"
+              @"
                     CREATE TABLE IF NOT EXISTS Bank_Accounts(    
                         accountNo TEXT PRIMARY KEY,
                         name TEXT NOT NULL,
@@ -58,8 +59,13 @@ namespace Banking_Application
                         accountType INTEGER NOT NULL,
                         overdraftAmount REAL,
                         interestRate REAL
-                    ) WITHOUT ROWID
-                ";
+                    );
+
+                    CREATE TABLE IF NOT EXISTS Hash_Table(
+                        hashTblID INT PRIMARY KEY IDENTITY,
+                        accountNo TEXT NOT NULL,
+                        hashValue TEXT NOT NULL
+                    )";
 
                 command.ExecuteNonQuery();
                 
@@ -120,9 +126,11 @@ namespace Banking_Application
             }
         }
 
-        public String addBankAccount(Bank_Account ba) 
+
+
+        public String addBankAccount(Bank_Account ba)
         {
-            
+
 
             if (ba.GetType() == typeof(Current_Account))
                 ba = (Current_Account)ba;
@@ -131,38 +139,7 @@ namespace Banking_Application
 
             accounts.Add(ba);
 
-           // using (var connection = getDatabaseConnection())
-           // {
-           //// https://learn.microsoft.com/en-us/dotnet/standard/data/sqlite/parameters
-           //     connection.Open();
-           //     var command = connection.CreateCommand();
-           //     command.CommandText =
-           //     @"
-           //         INSERT INTO Bank_Accounts VALUES(" +
-           //         "'" + ba.accountNo + "', " +
-           //         "'" + ba.name + "', " +
-           //         "'" + ba.address_line_1 + "', " +
-           //         "'" + ba.address_line_2 + "', " +
-           //         "'" + ba.address_line_3 + "', " +
-           //         "'" + ba.town + "', " +
-           //         ba.balance + ", " +
-           //         (ba.GetType() == typeof(Current_Account) ? 1 : 2) + ", ";
-
-           //     if (ba.GetType() == typeof(Current_Account))
-           //     {
-           //         Current_Account ca = (Current_Account)ba;
-           //         command.CommandText += ca.overdraftAmount + ", NULL)";
-           //     }
-
-           //     else
-           //     {
-           //         Savings_Account sa = (Savings_Account)ba;
-           //         command.CommandText += "NULL," + sa.interestRate + ")";
-           //     }
-
-           //     command.ExecuteNonQuery();
-
-           // }
+           
 
             using (var connection = getDatabaseConnection())
             {
@@ -214,8 +191,74 @@ namespace Banking_Application
 
         }
 
+
+        public String addHash(Hash h)
+        {
+            DateTime currentDateTime = DateTime.Now; // or DateTime.UtcNow for UTC time
+
+            // Format the date and time as a string
+            string formattedTimestamp = currentDateTime.ToString("dd-MM-yyyy HH:mm:ss");
+
+            using (var connection = getDatabaseConnection())
+            {
+                connection.Open();
+                var command = connection.CreateCommand();
+                command.CommandText =
+                  command.CommandText =
+                    @"
+                      INSERT INTO hashTBL VALUES (
+                      @accountNo, 
+                      @hashValue,
+                      @timeStamp
+                    )
+                    ";
+
+                command.Parameters.AddWithValue("@accountNo", h.accountNo);
+                command.Parameters.AddWithValue("@hashValue", h.hashValue);
+                command.Parameters.AddWithValue("@timeStamp", formattedTimestamp);
+
+                command.ExecuteNonQuery();
+            }
+
+            return h.hashValue;
+
+        }
+
+        public String updateHash(Hash h)
+        {
+            DateTime currentDateTime = DateTime.Now; // or DateTime.UtcNow for UTC time
+
+            // Format the date and time as a string
+            string formattedTimestamp = currentDateTime.ToString("dd-MM-yyyy HH:mm:ss");
+
+            using (var connection = getDatabaseConnection())
+            {
+                connection.Open();
+                var command = connection.CreateCommand();
+                command.CommandText =
+                  command.CommandText =
+                   @"
+                    UPDATE hashTBL 
+                    SET hashValue = @hashValue, timeStamp = @timeStamp 
+                    WHERE accountNo = @accountNo
+                   ";
+
+                command.Parameters.AddWithValue("@hashValue", h.hashValue);
+                command.Parameters.AddWithValue("@timeStamp", formattedTimestamp);
+                command.Parameters.AddWithValue("@accountNo", h.accountNo);
+           
+                command.ExecuteNonQuery();
+            }
+
+            return h.hashValue;
+
+        }
+
+
+
         public Bank_Account findBankAccountByAccNo(String accNo) 
         { 
+
         
             foreach(Bank_Account ba in accounts)
             {

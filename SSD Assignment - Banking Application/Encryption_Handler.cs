@@ -7,15 +7,17 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using static System.Net.Mime.MediaTypeNames;
+using Newtonsoft.Json;
+
 
 namespace SSD_Assignment___Banking_Application
 {
     public class Encryption_Handler
     {
         private Aes aesInstance;
+       // private Aes aesInstanceECB;
 
-        public  Aes genKey(byte[] iv)
+        public Aes genKey(byte[] iv)
 
         {
             Console.WriteLine("\n\nPassed in IV {0}", string.Join(", ", iv));
@@ -26,7 +28,7 @@ namespace SSD_Assignment___Banking_Application
             if (aesInstance == null) // if AES instance is null get/generate key
             {
 
-                String crypto_key_name = "key123 test9999";
+                String crypto_key_name = "SSD_Encryption_Key_2023";
                 CngProvider key_storage_provider = CngProvider.MicrosoftSoftwareKeyStorageProvider;
                 if (!CngKey.Exists(crypto_key_name, key_storage_provider))
                 {
@@ -41,7 +43,41 @@ namespace SSD_Assignment___Banking_Application
 
                 aesInstance = new AesCng(crypto_key_name, key_storage_provider);
                 aesInstance.KeySize = 128;
+                aesInstance.IV = iv;
                 aesInstance.Mode = CipherMode.CBC;
+                aesInstance.Padding = PaddingMode.PKCS7;
+            }
+
+            Console.WriteLine("AES Key: " + Convert.ToBase64String(aesInstance.Key)); // print key
+            return aesInstance;
+        }
+
+        public Aes genECBKey()
+
+        {
+  
+            Console.WriteLine("\nGenerate and store key");
+            Console.WriteLine("-----------------------");
+
+            if (aesInstance == null) // if AES instance is null get/generate key
+            {
+
+                String crypto_key_name = "SSD_Encryption_Key_2023";
+                CngProvider key_storage_provider = CngProvider.MicrosoftSoftwareKeyStorageProvider;
+                if (!CngKey.Exists(crypto_key_name, key_storage_provider))
+                {
+                    Console.WriteLine("Inside Key Gen IF");
+                    CngKeyCreationParameters key_creation_parameters = new CngKeyCreationParameters()
+                    {
+                        Provider = key_storage_provider
+                    };
+
+                    CngKey.Create(new CngAlgorithm("AES"), crypto_key_name, key_creation_parameters);
+                }
+
+                aesInstance = new AesCng(crypto_key_name, key_storage_provider);
+                aesInstance.KeySize = 128;
+                aesInstance.Mode = CipherMode.ECB;
                 aesInstance.Padding = PaddingMode.PKCS7;
             }
 
@@ -57,153 +93,166 @@ namespace SSD_Assignment___Banking_Application
             return iv;
         }
 
-        static byte[] Encrypt(byte[] plaintext_data, Aes aes)
-        {
-
-            byte[] ciphertext_data;//Byte Array Where Result Of Encryption Operation Will Be Stored.
-
-            ICryptoTransform encryptor = aes.CreateEncryptor();//Object That Contains The AES Encryption Algorithm (Using The Key and IV Value Specified In The AES Object). 
-
-            MemoryStream msEncrypt = new MemoryStream();//MemoryStream That Will Store The Output Of The Encryption Operation.
-
-            /*
-                Calling The Write() Method On The CryptoStream Object Declared Below Will Store/Write 
-                The Result Of The Encryption Operation To The Memory Stream Object Specified In The Constructor.
-            */
-            CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write);
-            csEncrypt.Write(plaintext_data, 0, plaintext_data.Length);//Writes All Data Contained In plaintext_data Byte Array To CryptoStream (Which Then Gets Encrypted And Gets Written to the msEncrypt MemoryStream).
-            csEncrypt.Dispose();//Closes CryptoStream
-
-            ciphertext_data = msEncrypt.ToArray();//Output Result Of Encryption Operation In Byte Array Form.
-            msEncrypt.Dispose();//Closes MemoryStream
-
-            return ciphertext_data;
-
-        }
-
-        static byte[] Decrypt(byte[] ciphertext_data, Aes aes)
-        {
-
-            byte[] plaintext_data;//Byte Array Where Result Of Decryption Operation Will Be Stored.
-
-            ICryptoTransform decryptor = aes.CreateDecryptor();//Object That Contains The AES Decryption Algorithm (Using The Key and IV Value Specified In The AES Object). 
-
-            MemoryStream msDecrypt = new MemoryStream();//MemoryStream That Will Store The Output Of The Decryption Operation.
-
-            /*
-                Calling The Write() Method On The CryptoStream Object Declared Below Will Store/Write 
-                The Result Of The Decryption Operation To The Memory Stream Object Specified In The Constructor.
-            */
-            CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Write);//Writes All Data Contained In Byte Array To CryptoStream (Which Then Gets Decrypted).
-            csDecrypt.Write(ciphertext_data, 0, ciphertext_data.Length);//Writes All Data Contained In ciphertext_data Byte Array To CryptoStream (Which Then Gets Decrypted And Gets Written to the msDecrypt MemoryStream).
-            csDecrypt.Dispose();//Closes CryptoStream
-
-            plaintext_data = msDecrypt.ToArray();//Output Result Of Decryption Operation In Byte Array Form.
-            msDecrypt.Dispose();//Closes MemoryStream
-
-            return plaintext_data;
-
-        }
+       
 
         private static string EncryptProperty(string propertyValue, Aes aes)
         {
             ICryptoTransform encryptor = aes.CreateEncryptor();
+            byte[] ciphertext_data;
+            byte[] plaintext_data = Encoding.UTF8.GetBytes(propertyValue);
 
-            MemoryStream msEncrypt = new MemoryStream();
-
-
-            using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
+            using (MemoryStream msEncrypt = new MemoryStream())
             {
-                byte[] valueBytes = Encoding.ASCII.GetBytes(propertyValue);
-                csEncrypt.Write(valueBytes, 0, valueBytes.Length);
-                csEncrypt.Dispose();//Closes CryptoStream
+                using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
+                {
+                    csEncrypt.Write(plaintext_data, 0, plaintext_data.Length);
+                }
+                ciphertext_data = msEncrypt.ToArray();
             }
-            msEncrypt.Dispose();//Closes MemoryStream
 
-            return Convert.ToBase64String(msEncrypt.ToArray());
-
-            //MemoryStream msEncrypt = new MemoryStream();
-
-
-            //using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
-            //{
-            //    byte[] valueBytes = Encoding.ASCII.GetBytes(propertyValue);
-            //    csEncrypt.Write(valueBytes, 0, valueBytes.Length);
-            //    csEncrypt.Dispose();//Closes CryptoStream
-            //}
-            //msEncrypt.Dispose();//Closes MemoryStream
-
-            //return Convert.ToBase64String(msEncrypt.ToArray());
+            return Convert.ToBase64String(ciphertext_data);
 
         }
 
         private string DecryptProperty(string propertyValue, Aes aes)
         {
+            byte[] valueBytes = Convert.FromBase64String(propertyValue); // Convert from Base64 to byte array
+            byte[] plaintext_data;
 
-            //////////////
-
-            byte[] valueBytes = Convert.FromBase64String(propertyValue); //converts back into byte array 
             ICryptoTransform decryptor = aes.CreateDecryptor();
 
-            MemoryStream msDecrypt = new MemoryStream();
+            using (MemoryStream msDecrypt = new MemoryStream(valueBytes))
+            {
+                using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+                {
+                    using (MemoryStream output = new MemoryStream())
+                    {
+                        csDecrypt.CopyTo(output);
+                        plaintext_data = output.ToArray();
+                    }
+                }
+            }
 
-            CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Write);
-            csDecrypt.Write(valueBytes, 0, valueBytes.Length);
-            csDecrypt.Dispose();//Closes CryptoStream
-
-            byte[] plaintext_data = msDecrypt.ToArray();
-            string text = Encoding.ASCII.GetString(plaintext_data);
-            msDecrypt.Dispose();//Closes
-
+            // Convert byte array to string using UTF-8 encoding
+            string text = Encoding.UTF8.GetString(plaintext_data);
             return text;
-
-
-
-
-
         }
 
-        public Bank_Account EncrypCurrentAccount(Bank_Account originalAccount)
+        public Current_Account EncrypCurrentAccount(Current_Account originalAccount)
         {
             Aes aes = genKey(originalAccount.iv);
+            Aes ecb = genECBKey(); // for account number // 
 
-          
-                Current_Account encryptedAccount = new Current_Account
+            Current_Account encryptedAccount = new Current_Account
                 {
-                    accountNo = EncryptProperty(originalAccount.accountNo, aes),
+                    accountNo = EncryptProperty(originalAccount.accountNo, ecb),
                     name = EncryptProperty(originalAccount.name, aes),
                     address_line_1 = EncryptProperty(originalAccount.address_line_1, aes),
                     address_line_2 = EncryptProperty(originalAccount.address_line_2, aes),
                     address_line_3 = EncryptProperty(originalAccount.address_line_3, aes),
-                    town = originalAccount.town,
+                    town = EncryptProperty(originalAccount.town, aes),
                     balance = originalAccount.balance,
+                    overdraftAmount= originalAccount.overdraftAmount,
                     iv = originalAccount.iv
                 };
               
                 return encryptedAccount;
-            
-
-         
         }
 
-        public Bank_Account DecrypCurrentAccount(Bank_Account originalAccount)
+        public Savings_Account EncryptSavingsAccount(Savings_Account originalAccount)
         {
             Aes aes = genKey(originalAccount.iv);
-          
-                Current_Account encryptedAccount = new Current_Account
-                {
-                    accountNo = DecryptProperty(originalAccount.accountNo, aes),
+            Aes ecb = genECBKey();
+
+
+            Savings_Account encryptedAccount = new Savings_Account
+            {
+                accountNo = EncryptProperty(originalAccount.accountNo, ecb),
+                name = EncryptProperty(originalAccount.name, aes),
+                address_line_1 = EncryptProperty(originalAccount.address_line_1, aes),
+                address_line_2 = EncryptProperty(originalAccount.address_line_2, aes),
+                address_line_3 = EncryptProperty(originalAccount.address_line_3, aes),
+                town = EncryptProperty(originalAccount.town, aes),
+                balance = originalAccount.balance,
+                interestRate = originalAccount.interestRate,
+                iv = originalAccount.iv,
+            };
+
+            return encryptedAccount;
+        }
+
+        public Current_Account DecrypCurrentAccount(Current_Account originalAccount)
+        {
+            Aes aes = genKey(originalAccount.iv);
+            Aes ecb = genECBKey();
+
+            Current_Account decryptedAccount = new Current_Account {
+                    accountNo = DecryptProperty(originalAccount.accountNo, ecb),
                     name = DecryptProperty(originalAccount.name, aes),
                     address_line_1 = DecryptProperty(originalAccount.address_line_1, aes),
                     address_line_2 = DecryptProperty(originalAccount.address_line_2, aes),
                     address_line_3 = DecryptProperty(originalAccount.address_line_3, aes),
-                    town = originalAccount.town,
+                    town = DecryptProperty(originalAccount.town, aes),
                     balance = originalAccount.balance,
-                    iv = originalAccount.iv
+                    overdraftAmount = originalAccount.overdraftAmount,
+                    iv = originalAccount.iv,
                 };
+             return decryptedAccount;
+         }
 
-                return encryptedAccount;
-            }
+        public Savings_Account DecryptSavingsAccount(Savings_Account originalAccount) {
+
+            Aes aes = genKey(originalAccount.iv);
+            Aes ecb = genECBKey();
+
+            Savings_Account decryptedAccount = new Savings_Account
+            {
+                accountNo = DecryptProperty(originalAccount.accountNo, ecb),
+                name = DecryptProperty(originalAccount.name, aes),
+                address_line_1 = DecryptProperty(originalAccount.address_line_1, aes),
+                address_line_2 = DecryptProperty(originalAccount.address_line_2, aes),
+                address_line_3 = DecryptProperty(originalAccount.address_line_3, aes),
+                town = DecryptProperty(originalAccount.town, aes),
+                balance = originalAccount.balance,
+                interestRate = originalAccount.interestRate,
+                iv = originalAccount.iv
+            
+            };
+
+            return decryptedAccount;
+
+        }
+
+       public string serializeObject(Bank_Account b) {
         
+            byte[] secretKey = Encoding.UTF8.GetBytes("SSD_HashKey_2023"); //protect in memory 
+            string serializedObject = JsonConvert.SerializeObject(b);
+
+            // Hashing the serialized object using HMACSHA256
+            byte[] hashedData = ComputeHMACSHA256(serializedObject, secretKey);
+
+            string hash = Convert.ToBase64String(hashedData);
+            Console.WriteLine("Hashed Object (Base64): " + hash);
+
+            return hash;
+        }
+
+        static byte[] ComputeHMACSHA256(string data, byte[] key)
+        {
+            using (HMACSHA256 hmac = new HMACSHA256(key))
+            {
+                byte[] hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(data));
+                return hash;
+            }
+        }
+
+        public string EncryptForAccountSearch(string accountNum) {
+
+            Aes key = genECBKey();
+
+            return EncryptProperty(accountNum, key);
+
+        }
+
     }
 }
