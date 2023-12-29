@@ -32,7 +32,7 @@ namespace Banking_Application
             //    Console.WriteLine($"Last Event ID: {lastEvent.Id}");
             //    Console.WriteLine($"Last Event Level: {lastEvent.LevelDisplayName}");
             //    Console.WriteLine($"Last Event Message: {lastEvent.FormatDescription()}");
-            //}
+            //} 
 
             dal.loadBankAccountNumbers();
 
