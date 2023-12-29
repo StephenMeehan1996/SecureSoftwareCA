@@ -49,7 +49,7 @@ public abstract class Bank_Account
 
         public override String ToString() {
 
-        return string.Format($"Account No: {accountNo}\nName: {name}\nAddress Line 1: {address_line_1}\nAddress Line 2: {address_line_2}\nAddress Line 3: {address_line_3}\nTown: {town}\nBalance: {balance}\nIV: {string.Join(", ", iv)}");
+        return string.Format($"Account No: {accountNo}\nName: {name}\nAddress Line 1: {address_line_1}\nAddress Line 2: {address_line_2}\nAddress Line 3: {address_line_3}\nTown: {town}\nBalance: {balance}\nIV: {string.Join(", ", iv)}\n");
 
         }
 

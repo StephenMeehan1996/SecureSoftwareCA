@@ -23,12 +23,13 @@ namespace SSD_Assignment___Banking_Application
             Console.WriteLine("\n\nGenerate and store key");
             Console.WriteLine("-----------------------");
 
-            //Console.WriteLine("\nPassed in IV {0}", string.Join(", ", iv));
-            //Console.WriteLine("\nBase64 Encoded IV: " + Convert.ToBase64String(iv));
+            if(iv != null)
+            {
+                Console.WriteLine("\nPassed in IV {0}", string.Join(", ", iv));
+                Console.WriteLine("\nBase64 Encoded IV: " + Convert.ToBase64String(iv));
+            }
 
-           
-
-                String crypto_key_name = "SSD_Encryption_Key_2023";
+            String crypto_key_name = "SSD_Encryption_Key_2023";
                 CngProvider key_storage_provider = CngProvider.MicrosoftSoftwareKeyStorageProvider;
 
                 if (!CngKey.Exists(crypto_key_name, key_storage_provider))
@@ -180,8 +181,11 @@ namespace SSD_Assignment___Banking_Application
 
         public Current_Account DecrypCurrentAccount(Current_Account originalAccount)
         {
+            Console.WriteLine("From Current Account HAndler: " + originalAccount.iv);
             Aes aes = GenOrCreateKey(originalAccount.iv, "CBC");
             Aes ecb = GenOrCreateKey(originalAccount.iv, "ECB");
+
+       
 
             Current_Account decryptedAccount = new Current_Account {
                     accountNo = DecryptProperty(originalAccount.accountNo, ecb),

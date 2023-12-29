@@ -283,22 +283,34 @@ namespace Banking_Application
                         {
                             Console.WriteLine("Account Does Not Exist");
                         }
-                        else
+                        else if(ba != null)
                         {
-                            Console.WriteLine(ba.ToString());
+                            Bank_Account da;
+
+                            if (ba.GetType() == typeof(Current_Account))
+                            {
+                                da = encryption_handler.DecrypCurrentAccount((Current_Account)ba);
+
+                            }
+                            else
+                            {
+                                da = encryption_handler.DecryptSavingsAccount((Savings_Account)ba);
+                            }
+
+                            Console.WriteLine(da.ToString());
 
                             String ans = "";
 
                             do
                             {
-
-                                Console.WriteLine("Proceed With Delection (Y/N)?"); 
+                                Console.WriteLine("Proceed With Delection (Y/N)?");
                                 ans = Console.ReadLine();
 
                                 switch (ans)
                                 {
                                     case "Y":
-                                    case "y": dal.closeBankAccount(accNo);
+                                    case "y":
+                                        dal.closeBankAccount(ba.accountNo);
                                         break;
                                     case "N":
                                     case "n":
@@ -309,13 +321,12 @@ namespace Banking_Application
                                 }
                             } while (!(ans.Equals("Y") || ans.Equals("y") || ans.Equals("N") || ans.Equals("n")));
                         }
+                    
 
                         break;
                     case "3":
                         Console.WriteLine("Enter Account Number: ");
                         accNo = Console.ReadLine();
-                 
-
                         ba = dal.findBankAccountByAccNo(accNo);
 
                         if(ba is null) 
@@ -324,7 +335,19 @@ namespace Banking_Application
                         }
                         else
                         {
-                            Console.WriteLine(ba.ToString());
+                            Bank_Account da;
+
+                            if (ba.GetType() == typeof(Current_Account))
+                            {
+                                da = encryption_handler.DecrypCurrentAccount((Current_Account)ba);
+
+                            }
+                            else
+                            {
+                                da = encryption_handler.DecryptSavingsAccount((Savings_Account)ba);
+                            }
+
+                            Console.WriteLine(da.ToString());
                         }
 
                         break;

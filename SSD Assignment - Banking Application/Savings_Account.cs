@@ -42,10 +42,8 @@ namespace Banking_Application
 
         public override String ToString()
         {
-
             return base.ToString() + 
             string.Format($"Account Type: Savings Account\nInterest Rate: {interestRate}\n");
-
         }
 
 

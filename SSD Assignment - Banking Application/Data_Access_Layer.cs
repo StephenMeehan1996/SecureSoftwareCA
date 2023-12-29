@@ -61,7 +61,8 @@ namespace Banking_Application
                         balance REAL NOT NULL,
                         accountType INTEGER NOT NULL,
                         overdraftAmount REAL,
-                        interestRate REAL
+                        interestRate REAL,
+                        IV TEXT
                     );
 
                     CREATE TABLE IF NOT EXISTS Hash_Table(
@@ -188,6 +189,7 @@ namespace Banking_Application
                             ca.town = dr.GetString(5);
                             ca.balance = dr.GetDouble(6);
                             ca.overdraftAmount = dr.GetDouble(8);
+                            ca.iv = Convert.FromBase64String(dr.GetString(10));
                             foundAccount = ca;
                         }
                         else
@@ -201,6 +203,7 @@ namespace Banking_Application
                             sa.town = dr.GetString(5);
                             sa.balance = dr.GetDouble(6);
                             sa.interestRate = dr.GetDouble(9);
+                            sa.iv = Convert.FromBase64String(dr.GetString(10));
                             foundAccount = sa;
                         }
                     }
@@ -239,7 +242,8 @@ namespace Banking_Application
                 @balance, 
                 @accountType, 
                 @overdraftAmount, 
-                @interestRate
+                @interestRate,
+                @IV
             )
         ";
 
@@ -250,6 +254,7 @@ namespace Banking_Application
                 command.Parameters.AddWithValue("@address_line_3", ba.address_line_3);
                 command.Parameters.AddWithValue("@town", ba.town);
                 command.Parameters.AddWithValue("@balance", ba.balance);
+                command.Parameters.AddWithValue("@IV", Convert.ToBase64String(ba.iv));
 
                 if (ba.GetType() == typeof(Current_Account))
                 {
@@ -363,25 +368,11 @@ namespace Banking_Application
 
         public bool closeBankAccount(String accNo) 
         {
-
-            Bank_Account toRemove = null;
-            
-            foreach (Bank_Account ba in accounts)
-            {
-
-                if (ba.accountNo.Equals(accNo))
-                {
-                    toRemove = ba;
-                    break;
-                }
-
-            }
-
-            if (toRemove == null)
+            if (accNo == null)
                 return false;
             else
             {
-                accounts.Remove(toRemove);
+                //accounts.Remove(toRemove);
 
                 using (var connection = getDatabaseConnection())
                 {
@@ -389,7 +380,7 @@ namespace Banking_Application
                     var command = connection.CreateCommand();
                     command.CommandText = "DELETE FROM Bank_Accounts WHERE accountNo = @accountNo";
 
-                    command.Parameters.AddWithValue("@accountNo", toRemove.accountNo);
+                    command.Parameters.AddWithValue("@accountNo", accNo);
 
                     command.ExecuteNonQuery();
                 }
