@@ -17,20 +17,20 @@ namespace SSD_Assignment___Banking_Application
         private Aes aesInstance;
         private Aes aesInstanceECB;
 
-        public Aes genKey(byte[] iv){
+        public Aes GenOrCreateKey(byte[]? iv, string mode){
 
          
             Console.WriteLine("\n\nGenerate and store key");
             Console.WriteLine("-----------------------");
 
-            Console.WriteLine("\nPassed in IV {0}", string.Join(", ", iv));
-            Console.WriteLine("\nBase64 Encoded IV: " + Convert.ToBase64String(iv));
+            //Console.WriteLine("\nPassed in IV {0}", string.Join(", ", iv));
+            //Console.WriteLine("\nBase64 Encoded IV: " + Convert.ToBase64String(iv));
 
-            if (aesInstance == null) // if AES instance is null get/generate key
-            {
+           
 
                 String crypto_key_name = "SSD_Encryption_Key_2023";
                 CngProvider key_storage_provider = CngProvider.MicrosoftSoftwareKeyStorageProvider;
+
                 if (!CngKey.Exists(crypto_key_name, key_storage_provider))
                 {
                     Console.WriteLine("Inside Key Gen IF");
@@ -43,14 +43,16 @@ namespace SSD_Assignment___Banking_Application
                 }
 
                 aesInstance = new AesCng(crypto_key_name, key_storage_provider);
-                aesInstance.KeySize = 128;
-                aesInstance.IV = iv;
-                aesInstance.Mode = CipherMode.CBC;
-                aesInstance.Padding = PaddingMode.PKCS7;
-            }
 
-            Console.WriteLine("AES Key: " + Convert.ToBase64String(aesInstance.Key)); // print key
-            Console.WriteLine("-----------------------\n\n");
+                if(mode == "CBC"){
+                    aesInstance.Mode = CipherMode.CBC;
+                    aesInstance.IV = iv;
+                }
+                else {
+                    aesInstance.Mode = CipherMode.ECB;
+                }
+               
+            aesInstance.Padding = PaddingMode.PKCS7;
             return aesInstance;
         }
 
@@ -59,8 +61,7 @@ namespace SSD_Assignment___Banking_Application
             Console.WriteLine("\n\nGenerate ECB Key");
             Console.WriteLine("-----------------------");
 
-            if (aesInstanceECB == null) // if AES instance is null get/generate key
-            {
+          
 
                 String crypto_key_name = "SSD_Encryption_Key_2023";
                 CngProvider key_storage_provider = CngProvider.MicrosoftSoftwareKeyStorageProvider;
@@ -76,13 +77,10 @@ namespace SSD_Assignment___Banking_Application
                 }
 
                 aesInstanceECB = new AesCng(crypto_key_name, key_storage_provider);
-                aesInstanceECB.KeySize = 128;
                 aesInstanceECB.Mode = CipherMode.ECB;
                 aesInstanceECB.Padding = PaddingMode.PKCS7;
-            }
+            
 
-            Console.WriteLine("AES Key: " + Convert.ToBase64String(aesInstanceECB.Key)); // print key
-            Console.WriteLine("-----------------------\n\n");
             return aesInstanceECB;
         }
 
@@ -93,8 +91,6 @@ namespace SSD_Assignment___Banking_Application
             rng.GetBytes(iv);
             return iv;
         }
-
-       
 
         private static string EncryptProperty(string propertyValue, Aes aes)
         {
@@ -141,8 +137,8 @@ namespace SSD_Assignment___Banking_Application
 
         public Current_Account EncrypCurrentAccount(Current_Account originalAccount)
         {
-            Aes aes = genKey(originalAccount.iv);
-            Aes ecb = genECBKey(); // for account number // 
+            Aes aes = GenOrCreateKey(originalAccount.iv, "CBC");
+            Aes ecb = GenOrCreateKey(originalAccount.iv, "ECB");
 
             Current_Account encryptedAccount = new Current_Account
                 {
@@ -162,8 +158,8 @@ namespace SSD_Assignment___Banking_Application
 
         public Savings_Account EncryptSavingsAccount(Savings_Account originalAccount)
         {
-            Aes aes = genKey(originalAccount.iv);
-            Aes ecb = genECBKey();
+            Aes aes = GenOrCreateKey(originalAccount.iv, "CBC");
+            Aes ecb = GenOrCreateKey(originalAccount.iv, "ECB");
 
 
             Savings_Account encryptedAccount = new Savings_Account
@@ -184,8 +180,8 @@ namespace SSD_Assignment___Banking_Application
 
         public Current_Account DecrypCurrentAccount(Current_Account originalAccount)
         {
-            Aes aes = genKey(originalAccount.iv);
-            Aes ecb = genECBKey();
+            Aes aes = GenOrCreateKey(originalAccount.iv, "CBC");
+            Aes ecb = GenOrCreateKey(originalAccount.iv, "ECB");
 
             Current_Account decryptedAccount = new Current_Account {
                     accountNo = DecryptProperty(originalAccount.accountNo, ecb),
@@ -203,8 +199,8 @@ namespace SSD_Assignment___Banking_Application
 
         public Savings_Account DecryptSavingsAccount(Savings_Account originalAccount) {
 
-            Aes aes = genKey(originalAccount.iv);
-            Aes ecb = genECBKey();
+            Aes aes = GenOrCreateKey(originalAccount.iv, "CBC");
+            Aes ecb = GenOrCreateKey(originalAccount.iv, "ECB");
 
             Savings_Account decryptedAccount = new Savings_Account
             {
@@ -249,7 +245,7 @@ namespace SSD_Assignment___Banking_Application
 
         public string EncryptForAccountSearch(string accountNum) {
 
-            Aes key = genECBKey();
+            Aes key = GenOrCreateKey(null, "ECB");
 
             return EncryptProperty(accountNum, key);
 
