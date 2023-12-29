@@ -210,7 +210,20 @@ namespace Banking_Application
                 }
             }
 
-            return foundAccount; // Return the found account or null if not found
+            //decrypt from DB
+            Bank_Account da;
+
+            if (foundAccount.GetType() == typeof(Current_Account))
+            {
+                da = encryption_handler.DecrypCurrentAccount((Current_Account)foundAccount);
+
+            }
+            else
+            {
+                da = encryption_handler.DecryptSavingsAccount((Savings_Account)foundAccount);
+            }
+
+            return da; // Return the found account or null if not found
         }
 
         public String addBankAccount(Bank_Account ba)
@@ -314,7 +327,6 @@ namespace Banking_Application
         public String updateHash(Hash h)
         {
             DateTime currentDateTime = DateTime.Now; // or DateTime.UtcNow for UTC time
-
             // Format the date and time as a string
             string formattedTimestamp = currentDateTime.ToString("dd-MM-yyyy HH:mm:ss");
 
@@ -336,15 +348,14 @@ namespace Banking_Application
            
                 command.ExecuteNonQuery();
             }
-
             return h.hashValue;
-
         }
 
 
 
         public Bank_Account findBankAccountByAccNo(String accNo) 
         {
+            accountNumbers = new List<string>();
             loadBankAccountNumbers();
 
             string encryptedNum = encryption_handler.EncryptForAccountSearch(accNo);

@@ -23,6 +23,9 @@ namespace Banking_Application
             Data_Access_Layer dal = Data_Access_Layer.getInstance();
             EventLogger eventLogger = new EventLogger("Application", "Banking-App");
             Encryption_Handler encryption_handler = new Encryption_Handler();
+            Bank_Account ba;
+            string accNo;
+            Hash h;
 
             //eventLogger.ReadAllEvents();
             //eventLogger.WriteEvent("This is a test event.", EventLogEntryType.Information);
@@ -155,9 +158,7 @@ namespace Banking_Application
 
                         } while (balance < 0);
 
-                        Bank_Account ba;
-                        string accNo;
-                        Hash h;
+                       
 
                         if (Convert.ToInt32(accountType) == Account_Type.Current_Account)
                         {
@@ -198,7 +199,6 @@ namespace Banking_Application
                          
 
                             accNo = dal.addBankAccount(ea); // add encrypted bank account
-
                             string hash = encryption_handler.serializeObject(ea);
                             h = new(ea.accountNo, hash);
 
@@ -271,6 +271,8 @@ namespace Banking_Application
                           
                         }
 
+
+
                         break;
 
                     case "2":
@@ -285,19 +287,9 @@ namespace Banking_Application
                         }
                         else if(ba != null)
                         {
-                            Bank_Account da;
+                           
 
-                            if (ba.GetType() == typeof(Current_Account))
-                            {
-                                da = encryption_handler.DecrypCurrentAccount((Current_Account)ba);
-
-                            }
-                            else
-                            {
-                                da = encryption_handler.DecryptSavingsAccount((Savings_Account)ba);
-                            }
-
-                            Console.WriteLine(da.ToString());
+                            Console.WriteLine(ba.ToString());
 
                             String ans = "";
 
@@ -310,7 +302,7 @@ namespace Banking_Application
                                 {
                                     case "Y":
                                     case "y":
-                                        dal.closeBankAccount(ba.accountNo);
+                                        dal.closeBankAccount(encryption_handler.EncryptForAccountSearch(ba.accountNo));
                                         break;
                                     case "N":
                                     case "n":
@@ -335,19 +327,8 @@ namespace Banking_Application
                         }
                         else
                         {
-                            Bank_Account da;
+                            Console.WriteLine(ba.ToString());
 
-                            if (ba.GetType() == typeof(Current_Account))
-                            {
-                                da = encryption_handler.DecrypCurrentAccount((Current_Account)ba);
-
-                            }
-                            else
-                            {
-                                da = encryption_handler.DecryptSavingsAccount((Savings_Account)ba);
-                            }
-
-                            Console.WriteLine(da.ToString());
                         }
 
                         break;
