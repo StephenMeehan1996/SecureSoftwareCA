@@ -219,12 +219,17 @@ namespace Banking_Application
                             byte[] iv = encryption_handler.CreateIV(); // create account random IV
                             string accountNo = System.Guid.NewGuid().ToString(); // Create account num
                             ba = new Savings_Account(accountNo,name, addressLine1, addressLine2, addressLine3, town, balance, interestRate, iv);
+                            iv = null;
+                            accNo= null;
 
                          
                           
                         }
 
                         Console.WriteLine(dal.HandleBankAccountInsert(ba));
+
+                        ba = null;
+                        GC.Collect();
 
                         break;
 
@@ -266,7 +271,10 @@ namespace Banking_Application
                                 }
                             } while (!(ans.Equals("Y") || ans.Equals("y") || ans.Equals("N") || ans.Equals("n")));
                         }
-                    
+
+                        accNo = null;
+                        ba = null;
+                        GC.Collect();
 
                         break;
                     case "3":
@@ -283,6 +291,10 @@ namespace Banking_Application
                             Console.WriteLine("\n" + ba.ToString());
 
                         }
+
+                        accNo = null;
+                        ba = null;
+                        GC.Collect();
 
                         break;
                     case "4": //Lodge
@@ -322,6 +334,10 @@ namespace Banking_Application
                             } while (amountToLodge < 0);
 
                             dal.lodge(accNo, amountToLodge);
+
+                            accNo = null;
+                            ba = null;
+                            GC.Collect();
                         }
                         break;
                     case "5": //Withdraw
@@ -361,13 +377,18 @@ namespace Banking_Application
                             } while (amountToWithdraw < 0);
 
                             bool withdrawalOK = dal.withdraw(accNo, amountToWithdraw);
-
-                            if(withdrawalOK == false)
+                         
+                            if (withdrawalOK == false)
                             {
 
                                 Console.WriteLine("Insufficient Funds Available.");
                             }
                         }
+                       
+                        accNo = null;
+                        ba = null;
+                        GC.Collect();
+
                         break;
                     case "6":
                         running = false;
