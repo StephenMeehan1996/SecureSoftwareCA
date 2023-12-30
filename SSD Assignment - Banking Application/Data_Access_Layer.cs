@@ -70,7 +70,7 @@ namespace Banking_Application
                         IV TEXT
                     );
 
-                    CREATE TABLE IF NOT EXISTS Hash_Table(
+                    CREATE TABLE IF NOT EXISTS hashTBL(
                         hashTblID INT PRIMARY KEY IDENTITY,
                         accountNo TEXT NOT NULL,
                         hashValue TEXT NOT NULL

@@ -191,6 +191,9 @@ namespace SSD_Assignment___Banking_Application
        public string serializeObject(Bank_Account b) {
         
             byte[] secretKey = Encoding.UTF8.GetBytes("SSD_HashKey_2023"); //protect in memory 
+
+           // ProtectKeyInMemory(secretKey);
+
             string serializedObject = JsonConvert.SerializeObject(b);
 
             // Hashing the serialized object using HMACSHA256
@@ -209,6 +212,20 @@ namespace SSD_Assignment___Banking_Application
                 return hash;
             }
         }
+
+       //public static void ProtectKeyInMemory(byte[] secretKey)
+       // {
+       //     try
+       //     {
+       //         // Protect the secret key in memory
+       //         ProtectedMemory.Protect(secretKey, MemoryProtectionScope.SameLogon);
+       //         Console.WriteLine("Secret key protected in memory.");
+       //     }
+       //     catch (CryptographicException e)
+       //     {
+       //         Console.WriteLine("Error protecting secret key in memory: " + e.Message);
+       //     }
+       // }
 
         public string EncryptForAccountSearch(string accountNum) {
 

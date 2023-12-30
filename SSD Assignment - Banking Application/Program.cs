@@ -240,8 +240,10 @@ namespace Banking_Application
                     case "2":
                         Console.WriteLine("Enter Account Number: ");
                         accNo = Console.ReadLine();
+                        if (!string.IsNullOrEmpty(accNo) && accNo.Length == 36)
+                        {
 
-                        ba = dal.findBankAccountByAccNo(accNo);
+                            ba = dal.findBankAccountByAccNo(accNo);
 
                         if (ba is null)
                         {
@@ -277,9 +279,17 @@ namespace Banking_Application
                             } while (!(ans.Equals("Y") || ans.Equals("y") || ans.Equals("N") || ans.Equals("n")));
                         
 
-                        accNo = null;
-                        ba = null;
-                        GC.Collect();
+                            accNo = null;
+                            ba = null;
+                            GC.Collect();
+                        }
+                        else
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("\n------------------------");
+                            Console.WriteLine("Account Number Not Valid");
+                            Console.WriteLine("------------------------\n");
+                        }
 
                         break;
                     case "3":
