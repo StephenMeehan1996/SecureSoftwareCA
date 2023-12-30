@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Security;
 using System.Text;
@@ -14,19 +15,19 @@ namespace Banking_Application
     public class Data_Access_Layer
     {
 
-        private List<Bank_Account> accounts;
+    
         List<string> accountNumbers = new List<string>(); // List to store account numbers
 
         public static String databaseName = "Banking Database.db";
         private static Data_Access_Layer instance = new Data_Access_Layer();
         Encryption_Handler encryption_handler = new Encryption_Handler();
+        EventLogger eventLogger = new EventLogger("Application", "Banking-App");
         Bank_Account ba;
-        string accNo;
-        Hash h;
+    
 
         private Data_Access_Layer()//Singleton Design Pattern (For Concurrency Control) - Use getInstance() Method Instead.
         {
-            accounts = new List<Bank_Account>();
+            
         }
 
         public static Data_Access_Layer getInstance()
@@ -87,7 +88,7 @@ namespace Banking_Application
                 Bank_Account ca = encryption_handler.EncrypCurrentAccount((Current_Account)ba); // encrypt bank account
               
                 string hash = encryption_handler.serializeObject(ca);
-                h = new(ca.accountNo, hash);
+                Hash h = new(ca.accountNo, hash);
 
                 addBankAccount(ca); 
 
@@ -100,7 +101,7 @@ namespace Banking_Application
                 Bank_Account sa = encryption_handler.EncryptSavingsAccount((Savings_Account)ba); // encrypt bank account
             
                 string hash = encryption_handler.serializeObject(sa);
-                h = new(sa.accountNo, hash);
+                Hash h = new(sa.accountNo, hash);
 
                 addBankAccount(sa); 
                 addHash(h);
@@ -109,59 +110,7 @@ namespace Banking_Application
             }
         }
 
-        public void loadBankAccounts()
-        {
-            if (!File.Exists(Data_Access_Layer.databaseName))
-                initialiseDatabase();
-            else
-            {
-
-                using (var connection = getDatabaseConnection())
-                {
-                    connection.Open();
-                    var command = connection.CreateCommand();
-                    command.CommandText = "SELECT * FROM Bank_Accounts";
-                    SqliteDataReader dr = command.ExecuteReader();
-
-                    while (dr.Read())
-                    {
-
-                        int accountType = dr.GetInt16(7);
-
-                        if (accountType == Account_Type.Current_Account)
-                        {
-                            Current_Account ca = new Current_Account();
-                            ca.accountNo = dr.GetString(0);
-                            ca.name = dr.GetString(1);
-                            ca.address_line_1 = dr.GetString(2);
-                            ca.address_line_2 = dr.GetString(3);
-                            ca.address_line_3 = dr.GetString(4);
-                            ca.town = dr.GetString(5);
-                            ca.balance = dr.GetDouble(6);
-                            ca.overdraftAmount = dr.GetDouble(8);
-                            accounts.Add(ca);
-                        }
-                        else
-                        {
-                            Savings_Account sa = new Savings_Account();
-                            sa.accountNo = dr.GetString(0);
-                            sa.name = dr.GetString(1);
-                            sa.address_line_1 = dr.GetString(2);
-                            sa.address_line_2 = dr.GetString(3);
-                            sa.address_line_3 = dr.GetString(4);
-                            sa.town = dr.GetString(5);
-                            sa.balance = dr.GetDouble(6);
-                            sa.interestRate = dr.GetDouble(9);
-                            accounts.Add(sa);
-                        }
-
-
-                    }
-
-                }
-
-            }
-        }
+      
 
         public void loadBankAccountNumbers()
         {
@@ -237,34 +186,59 @@ namespace Banking_Application
                 }
             }
 
-            //decrypt from DB
+            if (foundAccount != null)
+            {
+                //decrypt from DB
+                Bank_Account da;
+
+                if (foundAccount.GetType() == typeof(Current_Account))
+                {
+                    da = encryption_handler.DecrypCurrentAccount((Current_Account)foundAccount);
+
+                }
+                else
+                {
+                    da = encryption_handler.DecryptSavingsAccount((Savings_Account)foundAccount);
+                }
+
+                return da; // Return the found account or null if not found
+            }
+
+            return null;
+        }
+
+        public Bank_Account EncryptForHashing(Bank_Account ba)
+        {
+            if(ba == null)
+            {
+                return null;
+            }
+
             Bank_Account da;
 
-            if (foundAccount.GetType() == typeof(Current_Account))
+            if (ba.GetType() == typeof(Current_Account))
             {
-                da = encryption_handler.DecrypCurrentAccount((Current_Account)foundAccount);
+                da = encryption_handler.EncrypCurrentAccount((Current_Account)ba);
 
             }
             else
             {
-                da = encryption_handler.DecryptSavingsAccount((Savings_Account)foundAccount);
+                da = encryption_handler.EncryptSavingsAccount((Savings_Account)ba);
             }
 
             return da; // Return the found account or null if not found
+
         }
 
         public String addBankAccount(Bank_Account ba)
         {
-
+            DateTime currentDateTime = DateTime.Now; // or DateTime.UtcNow for UTC time
+            string formattedTimestamp = currentDateTime.ToString("dd-MM-yyyy HH:mm:ss");
 
             if (ba.GetType() == typeof(Current_Account))
                 ba = (Current_Account)ba;
             else
                 ba = (Savings_Account)ba;
-
-            accounts.Add(ba);
-
-           
 
             using (var connection = getDatabaseConnection())
             {
@@ -272,20 +246,20 @@ namespace Banking_Application
                 var command = connection.CreateCommand();
                 command.CommandText =
                     @"
-            INSERT INTO Bank_Accounts VALUES (
-                @accountNo, 
-                @name, 
-                @address_line_1, 
-                @address_line_2, 
-                @address_line_3, 
-                @town, 
-                @balance, 
-                @accountType, 
-                @overdraftAmount, 
-                @interestRate,
-                @IV
-            )
-        ";
+                    INSERT INTO Bank_Accounts VALUES (
+                        @accountNo, 
+                        @name, 
+                        @address_line_1, 
+                        @address_line_2, 
+                        @address_line_3, 
+                        @town, 
+                        @balance, 
+                        @accountType, 
+                        @overdraftAmount, 
+                        @interestRate,
+                        @IV
+                      )
+                        ";
 
                 command.Parameters.AddWithValue("@accountNo", ba.accountNo);
                 command.Parameters.AddWithValue("@name", ba.name);
@@ -313,7 +287,7 @@ namespace Banking_Application
 
                 command.ExecuteNonQuery();
             }
-
+            eventLogger.WriteEvent($"Account Number: {ba.accountNo}\nAction: Created New Account\nTime: {formattedTimestamp}", EventLogEntryType.Information);
             return ba.accountNo;
 
         }
@@ -346,7 +320,7 @@ namespace Banking_Application
 
                 command.ExecuteNonQuery();
             }
-
+            eventLogger.WriteEvent($"Account Number: {h.accountNo}\nAction: Created Hash for new account\nTime: {formattedTimestamp}", EventLogEntryType.Information);
             return h.hashValue;
 
         }
@@ -375,7 +349,74 @@ namespace Banking_Application
            
                 command.ExecuteNonQuery();
             }
+
+            eventLogger.WriteEvent($"Account Number: {h.accountNo}\nAction: Updated hash\nTime: {formattedTimestamp}", EventLogEntryType.Information);
+
             return h.hashValue;
+        }
+
+        public bool CompareHashValue(Bank_Account ba)
+        {
+            Bank_Account ea = EncryptForHashing(ba);
+            string currrentHash = encryption_handler.serializeObject(ea);
+
+            if (RetrieveHashValue(ea.accountNo) != currrentHash)
+            {
+                Console.WriteLine("\n------------------------");
+                Console.WriteLine("Integrity of data has been breached");
+                Console.WriteLine("------------------------\n");
+
+                DateTime currentDateTime = DateTime.Now; // or DateTime.UtcNow for UTC time
+                string formattedTimestamp = currentDateTime.ToString("dd-MM-yyyy HH:mm:ss");
+
+                eventLogger.WriteEvent($"Account Number: {ba.accountNo}\nAction: Hash Mismatch\nTime: {formattedTimestamp}", EventLogEntryType.Error);
+
+                return false;
+
+            }
+
+            return true;
+
+        }
+
+        public string RetrieveHashValue(string accountNo)
+        {
+            string hashValue = null;
+       
+
+            using (var connection = getDatabaseConnection())
+            {
+                connection.Open();
+                var command = connection.CreateCommand();
+                command.CommandText =
+                  @"
+                    SELECT hashValue 
+                    FROM hashTBL 
+                    WHERE accountNo = @accountNo
+                  ";
+
+                command.Parameters.AddWithValue("@accountNo", accountNo);
+
+                // Execute the query to fetch the hash value
+                using (var reader = command.ExecuteReader())
+                {
+                    if (reader.Read()) // Check if a record is found
+                    {
+                        hashValue = reader["hashValue"].ToString(); // Retrieve the hash value
+                    }
+                }
+            }
+
+            // Log retrieval action to the event log if the hash value was retrieved
+            if (hashValue != null)
+            {
+                DateTime currentDateTime = DateTime.Now; // or DateTime.UtcNow for UTC time
+                string formattedTimestamp = currentDateTime.ToString("dd-MM-yyyy HH:mm:ss");
+
+                eventLogger.WriteEvent($"Account Number: {accountNo}\nAction: Retrieved hash\nTime: {formattedTimestamp}", EventLogEntryType.Information);
+            }
+
+            return hashValue;
         }
 
 
@@ -402,6 +443,9 @@ namespace Banking_Application
 
         public bool closeBankAccount(String accNo) 
         {
+            DateTime currentDateTime = DateTime.Now; // or DateTime.UtcNow for UTC time
+            string formattedTimestamp = currentDateTime.ToString("dd-MM-yyyy HH:mm:ss");
+
             if (accNo == null)
                 return false;
             else
@@ -419,6 +463,8 @@ namespace Banking_Application
                     command.ExecuteNonQuery();
                 }
 
+                eventLogger.WriteEvent($"Account Number: {accNo}\nAction: Account Closed\nTime: {formattedTimestamp}", EventLogEntryType.Information);
+
                 return true;
             }
 
@@ -435,6 +481,8 @@ namespace Banking_Application
                 
                 double newBalance = ba.balance += amountToLodge;
                 string encryptedNum = encryption_handler.EncryptForAccountSearch(ba.accountNo);
+                DateTime currentDateTime = DateTime.Now; // or DateTime.UtcNow for UTC time
+                string formattedTimestamp = currentDateTime.ToString("dd-MM-yyyy HH:mm:ss");
 
                 using (var connection = getDatabaseConnection())
                 {
@@ -450,6 +498,21 @@ namespace Banking_Application
                     Console.WriteLine("\n------------------------");
                     Console.WriteLine($"Lodge Successfull - New Balance: {newBalance}");
                     Console.WriteLine("------------------------\n");
+
+                    Bank_Account ea = EncryptForHashing(ba);
+             
+
+                    string hash = encryption_handler.serializeObject(ea);
+                    Hash h = new(ea.accountNo, hash);
+                    updateHash(h);
+
+                    eventLogger.WriteEvent($"Account Number: {ba.accountNo}\nAction: Lodgement of {amountToLodge}\nTime: {formattedTimestamp}", EventLogEntryType.Information);
+                   
+
+                    ea = null;
+                    hash = null;
+                    h = null;
+
                 }
 
                 ba = null;
@@ -466,12 +529,14 @@ namespace Banking_Application
             Bank_Account ba = findBankAccountByAccNo(accNo);
             double newBalance = ba.balance -= amountToWithdraw;
             double maxWidthdraw;
+            DateTime currentDateTime = DateTime.Now; // or DateTime.UtcNow for UTC time
+            string formattedTimestamp = currentDateTime.ToString("dd-MM-yyyy HH:mm:ss");
 
             if (ba.GetType() == typeof(Current_Account))
             {
                 Current_Account ca = (Current_Account)ba;
                 maxWidthdraw= ca.balance + ca.overdraftAmount;
-                Console.WriteLine(maxWidthdraw);
+                Console.WriteLine("here " + maxWidthdraw);
                 ca = null; // For Garbage
             }
             else
@@ -479,7 +544,7 @@ namespace Banking_Application
                 maxWidthdraw = ba.balance;
             }
 
-            if (newBalance < maxWidthdraw)
+            if (amountToWithdraw <= maxWidthdraw)
               {
                 string encryptedNum = encryption_handler.EncryptForAccountSearch(ba.accountNo);
 
@@ -497,6 +562,20 @@ namespace Banking_Application
                     Console.WriteLine("\n------------------------");
                     Console.WriteLine($"Widthdraw Successfull - New Balance: {newBalance}");
                     Console.WriteLine("------------------------\n");
+
+
+                    Bank_Account ea = EncryptForHashing(ba);
+
+
+                    string hash = encryption_handler.serializeObject(ea);
+                    Hash h = new(ea.accountNo, hash);
+                    updateHash(h);
+
+                    eventLogger.WriteEvent($"Account Number: {ba.accountNo}\nAction: Widthdrawel of {amountToWithdraw}\nTime: {formattedTimestamp}", EventLogEntryType.Information);
+
+                    ea = null;
+                    hash = null;
+                    h = null;
                 }
 
                 encryptedNum = null;

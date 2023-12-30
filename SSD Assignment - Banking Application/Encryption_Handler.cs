@@ -197,7 +197,6 @@ namespace SSD_Assignment___Banking_Application
             byte[] hashedData = ComputeHMACSHA256(serializedObject, secretKey);
 
             string hash = Convert.ToBase64String(hashedData);
-            Console.WriteLine("Hashed Object (Base64): " + hash);
 
             return hash;
         }
