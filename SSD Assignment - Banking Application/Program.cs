@@ -20,11 +20,10 @@ namespace Banking_Application
             EventLogger eventLogger = new EventLogger("Application", "Banking-App");
             Encryption_Handler encryption_handler = new Encryption_Handler();
             InputValidator validator = new InputValidator();
+            ResourceCal rcal = new ResourceCal();
             Bank_Account ba;
             string accNo;
             bool running = true;
-
-           // encryption_handler.ProtectHashKey();
 
             do
             {
@@ -45,6 +44,7 @@ namespace Banking_Application
                 Console.WriteLine("CHOOSE OPTION:");
                 String option = Console.ReadLine();
                 Console.ForegroundColor = ConsoleColor.White;
+
                 switch (option)
                 {
                     case "1":
@@ -54,8 +54,14 @@ namespace Banking_Application
                         do
                         {
 
-                           if(loopCount > 0)
-                                Console.WriteLine("INVALID OPTION CHOSEN - PLEASE TRY AGAIN");
+                            if (loopCount > 0)
+                            {
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine("\n------------------------");
+                                Console.WriteLine("Invalid Option Selected - Please Choose Again");
+                                Console.WriteLine("------------------------\n");
+                                Console.ForegroundColor = ConsoleColor.White;
+                            }
 
                             Console.WriteLine("");
                             Console.WriteLine("***Account Types***:");
@@ -343,195 +349,255 @@ namespace Banking_Application
 
                         break;
                     case "3":
-                        Console.WriteLine("Enter Account Number: ");
-                        accNo = Console.ReadLine();
-                        ba = null;
 
-                        //Example of Utlilizing relection
-
-                        if (!string.IsNullOrEmpty(accNo) && accNo.Length == 36)
+                        for (int attempt = 0; attempt < 3; attempt++) // will attempt three times before quiting
                         {
-                            Type dataAccessType = typeof(Data_Access_Layer);
-
-                            MethodInfo method = dataAccessType.GetMethod("findBankAccountByAccNo");
-
-                            if(method != null)
+                            if (rcal.GetRemainingCPU() < 3 || rcal.GetRemainingRAM() < 2) // checks resource's remaining
                             {
-                                var access = Activator.CreateInstance(dataAccessType);
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine("\n------------------------");
+                                Console.WriteLine("Resource Availability Error, Trying again... ");
+                                Console.WriteLine("------------------------\n");
 
-                                object result = method.Invoke(access, new object[] { accNo });
+                            }
 
-                                if (result != null && result is Bank_Account)
+                            else
+                            {
+                                Console.WriteLine("Enter Account Number: ");
+                                accNo = Console.ReadLine();
+                                ba = null;
+
+                                //Example of Utlilizing relection
+                                if (!string.IsNullOrEmpty(accNo) && accNo.Length == 36)
                                 {
-                                    ba = (Bank_Account)result; //cast result to bank account type
+                                    Type dataAccessType = typeof(Data_Access_Layer);
+
+                                    MethodInfo method = dataAccessType.GetMethod("findBankAccountByAccNo");
+
+                                    if (method != null)
+                                    {
+                                        var access = Activator.CreateInstance(dataAccessType);
+
+                                        object result = method.Invoke(access, new object[] { accNo });
+
+                                        if (result != null && result is Bank_Account)
+                                        {
+                                            ba = (Bank_Account)result; //cast result to bank account type
+                                        }
+                                    }
+
+                                    if (ba is null)
+                                    {
+                                        Console.ForegroundColor = ConsoleColor.Red;
+                                        Console.WriteLine("\n------------------------");
+                                        Console.WriteLine("Account Does Not Exist");
+                                        Console.WriteLine("------------------------\n");
+
+                                        break;
+                                    }
+
+                                    if (dal.CompareHashValue(ba))
+                                    {
+                                        Console.WriteLine("\n" + ba.ToString());
+
+                                        accNo = null;
+                                        ba = null;
+                                        GC.Collect();
+                                    }
+                                }
+                                else
+                                {
+                                    Console.ForegroundColor = ConsoleColor.Red;
+                                    Console.WriteLine("\n------------------------");
+                                    Console.WriteLine("Account Number Not Valid");
+                                    Console.WriteLine("------------------------\n");
                                 }
 
+                              break;
                             }
-
-                            if (ba is null)
-                            {
-                                Console.ForegroundColor = ConsoleColor.Red;
-                                Console.WriteLine("\n------------------------");
-                                Console.WriteLine("Account Does Not Exist");
-                                Console.WriteLine("------------------------\n");
-
-                                break;
-                            }
-
-                            if (dal.CompareHashValue(ba))
-                            {
-                                Console.WriteLine("\n" + ba.ToString());
-
-                                accNo = null;
-                                ba = null;
-                                GC.Collect();
-                            }
-                        }
-                        else
-                        {
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            Console.WriteLine("\n------------------------");
-                            Console.WriteLine("Account Number Not Valid");
-                            Console.WriteLine("------------------------\n");
                         }
                         break;
+
                     case "4": //Lodge
-                        Console.WriteLine("Enter Account Number: ");
-                        accNo = Console.ReadLine();
 
-                        if (!string.IsNullOrEmpty(accNo) && accNo.Length == 36)
+                        for (int attempt = 0; attempt < 3; attempt++) // will attempt three times before quiting
                         {
-                            ba = dal.findBankAccountByAccNo(accNo);
-
-                            if (ba is null)
+                            if (rcal.GetRemainingCPU() < 3 || rcal.GetRemainingRAM() < 2) // checks resource's remaining
                             {
                                 Console.ForegroundColor = ConsoleColor.Red;
                                 Console.WriteLine("\n------------------------");
-                                Console.WriteLine("Account Does Not Exist");
+                                Console.WriteLine("Resource Availability Error, Trying again... ");
                                 Console.WriteLine("------------------------\n");
 
-                                break;
                             }
+                            else
+                            {
+                                Console.WriteLine("Enter Account Number: ");
+                                accNo = Console.ReadLine();
 
-                            if (dal.CompareHashValue(ba))
-                            { // confirm has is the same //
-
-                                double amountToLodge = -1;
-                                loopCount = 0;
-
-                                do
+                                if (!string.IsNullOrEmpty(accNo) && accNo.Length == 36)
                                 {
-                                    if (loopCount > 0)
-                                        Console.WriteLine("INVALID AMOUNT ENTERED - PLEASE TRY AGAIN");
+                                    ba = dal.findBankAccountByAccNo(accNo);
 
-                                    Console.WriteLine("Enter Amount To Lodge: ");
-                                    String amountToLodgeString = Console.ReadLine();
-
-                                    try
+                                    if (ba is null)
                                     {
-                                        amountToLodge = Convert.ToDouble(amountToLodgeString);
+                                        Console.ForegroundColor = ConsoleColor.Red;
+                                        Console.WriteLine("\n------------------------");
+                                        Console.WriteLine("Account Does Not Exist");
+                                        Console.WriteLine("------------------------\n");
+
+                                        break;
                                     }
 
-                                    catch
-                                    {
-                                        loopCount++;
+                                    if (dal.CompareHashValue(ba))
+                                    { // confirm has is the same //
+
+                                        double amountToLodge;
+                                        loopCount = 0;
+
+                                        do
+                                        {
+                                            if (loopCount > 0)
+                                            {
+                                                Console.ForegroundColor = ConsoleColor.Red;
+                                                Console.WriteLine("\n------------------------");
+                                                Console.WriteLine("Invalid Amount Entered - Please Try Again");
+                                                Console.WriteLine("------------------------\n");
+                                                Console.ForegroundColor = ConsoleColor.White;
+                                            }
+
+                                            Console.WriteLine("Enter Amount To Lodge: ");
+                                            String amountToLodgeString = Console.ReadLine();
+
+                                            if (validator.IsValidDouble(amountToLodgeString, out amountToLodge))
+                                            {
+                                                loopCount = 0;
+                                            }
+                                            else
+                                            {
+                                                loopCount++;
+                                            }
+
+                                        } while (amountToLodge <= 0);
+
+                                        dal.lodge(accNo, amountToLodge);
+
+                                        accNo = null;
+                                        ba = null;
+                                        GC.Collect();
                                     }
+                                }
+                                else
+                                {
+                                    Console.ForegroundColor = ConsoleColor.Red;
+                                    Console.WriteLine("\n------------------------");
+                                    Console.WriteLine("Account Number Not Valid");
+                                    Console.WriteLine("------------------------\n");
 
-                                } while (amountToLodge < 0);
+                                }
 
-                                dal.lodge(accNo, amountToLodge);
-
-                                accNo = null;
-                                ba = null;
-                                GC.Collect();
+                               break;
                             }
                         }
-                        else
-                        {
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            Console.WriteLine("\n------------------------");
-                            Console.WriteLine("Account Number Not Valid");
-                            Console.WriteLine("------------------------\n");
-
-                        }
-
                         break;
                     case "5": //Withdraw
-                        Console.WriteLine("Enter Account Number: ");
-                        accNo = Console.ReadLine();
 
-                        if (!string.IsNullOrEmpty(accNo) && accNo.Length == 36)
+                        for (int attempt = 0; attempt < 3; attempt++) // will attempt three times before quiting
                         {
-                            ba = dal.findBankAccountByAccNo(accNo);
-
-                        if (ba is null)
-                        {
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            Console.WriteLine("\n------------------------");
-                            Console.WriteLine("Account Does Not Exist");
-                            Console.WriteLine("------------------------\n");
-
-                            break;
-                        }
-
-                        if (dal.CompareHashValue(ba))
-                        {
-                                double amountToWithdraw = -1;
-                                loopCount = 0;
-
-                                do
-                                {
-
-                                    if (loopCount > 0)
-                                    Console.ForegroundColor = ConsoleColor.Red;
-                                    Console.WriteLine("------------------------\n");
-                                    Console.WriteLine("INVALID AMOUNT ENTERED - PLEASE TRY AGAIN");
-                                    Console.WriteLine("------------------------\n");
-
-                                Console.WriteLine("Enter Amount To Withdraw (€" + ba.balance + " Available): ");
-                                    String amountToWithdrawString = Console.ReadLine();
-
-                                    try
-                                    {
-                                        amountToWithdraw = Convert.ToDouble(amountToWithdrawString);
-                                    }
-
-                                    catch
-                                    {
-                                        loopCount++;
-                                    }
-
-                                } while (amountToWithdraw < 0);
-
-                                bool withdrawalOK = dal.withdraw(accNo, amountToWithdraw);
-
-                                if (withdrawalOK == false)
-                                {
+                            if (rcal.GetRemainingCPU() < 3 || rcal.GetRemainingRAM() < 2) // checks resource's remaining
+                            {
                                 Console.ForegroundColor = ConsoleColor.Red;
                                 Console.WriteLine("\n------------------------");
-                                Console.WriteLine("Insufficient Funds Available.");
+                                Console.WriteLine("Resource Availability Error, Trying again... ");
                                 Console.WriteLine("------------------------\n");
-                              }
+
                             }
+                            else
+                            {
+                                Console.WriteLine("Enter Account Number: ");
+                                accNo = Console.ReadLine();
 
-                            accNo = null;
-                            ba = null;
-                            GC.Collect();
-                        }
-                        else
-                        {
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            Console.WriteLine("\n------------------------");
-                            Console.WriteLine("Account Number Not Valid");
-                            Console.WriteLine("------------------------\n");
+                                if (!string.IsNullOrEmpty(accNo) && accNo.Length == 36)
+                                {
+                                    ba = dal.findBankAccountByAccNo(accNo);
 
-                        }
+                                    if (ba is null)
+                                    {
+                                        Console.ForegroundColor = ConsoleColor.Red;
+                                        Console.WriteLine("\n------------------------");
+                                        Console.WriteLine("Account Does Not Exist");
+                                        Console.WriteLine("------------------------\n");
+
+                                        break;
+                                    }
+
+                                    if (dal.CompareHashValue(ba))
+                                    {
+                                        double amountToWithdraw;
+                                        loopCount = 0;
+
+                                        do
+                                        {
+
+                                            if (loopCount > 0)
+                                            {
+                                                Console.ForegroundColor = ConsoleColor.Red;
+                                                Console.WriteLine("\n------------------------");
+                                                Console.WriteLine("Invalid Amount Entered - Please Try Again");
+                                                Console.WriteLine("------------------------\n");
+                                                Console.ForegroundColor = ConsoleColor.White;
+                                            }
+
+                                            Console.WriteLine($"Enter Amount To Withdraw (€{ba.balance})");
+
+                                            String amountToWithdrawString = Console.ReadLine();
+
+                                            if (validator.IsValidDouble(amountToWithdrawString, out amountToWithdraw))
+                                            {
+                                                loopCount = 0;
+                                            }
+                                            else
+                                            {
+                                                loopCount++;
+                                            }
+
+                                        } while (amountToWithdraw < 0);
+
+                                        bool withdrawalOK = dal.withdraw(accNo, amountToWithdraw);
+
+                                        if (withdrawalOK == false)
+                                        {
+                                            Console.ForegroundColor = ConsoleColor.Red;
+                                            Console.WriteLine("\n------------------------");
+                                            Console.WriteLine("Insufficient Funds Available.");
+                                            Console.WriteLine("------------------------\n");
+                                        }
+                                    }
+
+                                    accNo = null;
+                                    ba = null;
+                                    GC.Collect();
+                                }
+                                else
+                                {
+                                    Console.ForegroundColor = ConsoleColor.Red;
+                                    Console.WriteLine("\n------------------------");
+                                    Console.WriteLine("Account Number Not Valid");
+                                    Console.WriteLine("------------------------\n");
+                                }
+
+                              break;
+                            }
+                        }  
                         break;
                     case "6":
                         running = false;
                         break;
-                    default:    
-                        Console.WriteLine("INVALID OPTION CHOSEN - PLEASE TRY AGAIN");
+                    default:
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("\n------------------------");
+                        Console.WriteLine("Invalid Option Selected - Please Try Again");
+                        Console.WriteLine("------------------------\n");
                         break;
                 }
                 

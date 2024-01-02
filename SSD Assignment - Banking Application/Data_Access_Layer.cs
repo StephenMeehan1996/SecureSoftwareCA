@@ -71,9 +71,9 @@ namespace Banking_Application
                     );
 
                     CREATE TABLE IF NOT EXISTS hashTBL(
-                        hashTblID INT PRIMARY KEY IDENTITY,
-                        accountNo TEXT NOT NULL,
-                        hashValue TEXT NOT NULL
+                        accountNo TEXT PRIMARY KEY,
+                        hashValue TEXT NOT NULL,
+                        timeStamp TEXT
                     )";
 
                 command.ExecuteNonQuery();
@@ -360,10 +360,6 @@ namespace Banking_Application
             Bank_Account ea = EncryptForHashing(ba);
 
             string currrentHash = encryption_handler.serializeObject(ea);
-
-            Console.WriteLine("Account num: " + ea.accountNo);
-            Console.WriteLine("Current: " + currrentHash);
-            Console.WriteLine("DB: " +RetrieveHashValue(ea.accountNo));
 
             if (RetrieveHashValue(ea.accountNo) != currrentHash)
             {
