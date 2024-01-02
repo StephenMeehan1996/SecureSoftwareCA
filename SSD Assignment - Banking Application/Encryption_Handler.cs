@@ -32,6 +32,9 @@ namespace SSD_Assignment___Banking_Application
 
             Aes aesInstance = new AesCng(crypto_key_name, key_storage_provider);
 
+            // Had to remove keysize from aesInstance, it created a different key each
+            // time method was called (with same IV)
+
                 if(mode == "CBC"){
                     aesInstance.Mode = CipherMode.CBC;
                     aesInstance.IV = iv;
@@ -230,8 +233,6 @@ namespace SSD_Assignment___Banking_Application
                 return hash;
             }
         }
-
- 
 
         public string EncryptForAccountSearch(string accountNum) {
 
