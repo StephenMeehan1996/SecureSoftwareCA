@@ -188,18 +188,36 @@ namespace SSD_Assignment___Banking_Application
             return decryptedAccount;
         }
 
-       public string serializeObject(Bank_Account b) {
-        
-            byte[] secretKey = Encoding.UTF8.GetBytes("SSD_HashKey_2023"); //protect in memory 
+    
+        private byte[] GenerateSecretKey()
+        {
+            byte[] secretKey = Encoding.UTF8.GetBytes("SSD_HashKey_2023");
 
-           // ProtectKeyInMemory(secretKey);
+            //Protect key in memeory
+            byte[] protectedKey = Windows_DPAPI.Protect(secretKey, false, System.Security.Cryptography.DataProtectionScope.CurrentUser);
+
+            //remove unprotected
+            secretKey = null;
+            GC.Collect();
+
+            return protectedKey;
+        }
+
+        public string serializeObject(Bank_Account b) {
+
+            byte[] key = Windows_DPAPI.Unprotect(GenerateSecretKey(), false, System.Security.Cryptography.DataProtectionScope.CurrentUser);
 
             string serializedObject = JsonConvert.SerializeObject(b);
 
             // Hashing the serialized object using HMACSHA256
-            byte[] hashedData = ComputeHMACSHA256(serializedObject, secretKey);
+            byte[] hashedData = ComputeHMACSHA256(serializedObject, key);
 
             string hash = Convert.ToBase64String(hashedData);
+
+            key = null;
+            serializedObject = null;
+            hashedData = null;
+            GC.Collect();
 
             return hash;
         }
@@ -213,19 +231,7 @@ namespace SSD_Assignment___Banking_Application
             }
         }
 
-       //public static void ProtectKeyInMemory(byte[] secretKey)
-       // {
-       //     try
-       //     {
-       //         // Protect the secret key in memory
-       //         ProtectedMemory.Protect(secretKey, MemoryProtectionScope.SameLogon);
-       //         Console.WriteLine("Secret key protected in memory.");
-       //     }
-       //     catch (CryptographicException e)
-       //     {
-       //         Console.WriteLine("Error protecting secret key in memory: " + e.Message);
-       //     }
-       // }
+ 
 
         public string EncryptForAccountSearch(string accountNum) {
 

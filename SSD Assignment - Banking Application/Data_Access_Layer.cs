@@ -25,7 +25,7 @@ namespace Banking_Application
         Bank_Account ba;
     
 
-        private Data_Access_Layer()//Singleton Design Pattern (For Concurrency Control) - Use getInstance() Method Instead.
+        public Data_Access_Layer()//Singleton Design Pattern (For Concurrency Control) - Use getInstance() Method Instead.
         {
             
         }
@@ -358,7 +358,12 @@ namespace Banking_Application
         public bool CompareHashValue(Bank_Account ba)
         {
             Bank_Account ea = EncryptForHashing(ba);
+
             string currrentHash = encryption_handler.serializeObject(ea);
+
+            Console.WriteLine("Account num: " + ea.accountNo);
+            Console.WriteLine("Current: " + currrentHash);
+            Console.WriteLine("DB: " +RetrieveHashValue(ea.accountNo));
 
             if (RetrieveHashValue(ea.accountNo) != currrentHash)
             {

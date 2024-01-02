@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Security.Principal;
 using System.Diagnostics.Eventing.Reader;
+using System.Reflection;
 
 namespace Banking_Application
 {
@@ -18,10 +19,12 @@ namespace Banking_Application
             Data_Access_Layer dal = Data_Access_Layer.getInstance();
             EventLogger eventLogger = new EventLogger("Application", "Banking-App");
             Encryption_Handler encryption_handler = new Encryption_Handler();
+            InputValidator validator = new InputValidator();
             Bank_Account ba;
             string accNo;
-
             bool running = true;
+
+           // encryption_handler.ProtectHashKey();
 
             do
             {
@@ -72,30 +75,41 @@ namespace Banking_Application
                         {
 
                             if (loopCount > 0)
-                                Console.WriteLine("INVALID NAME ENTERED - PLEASE TRY AGAIN");
+                            {
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine("\n------------------------");
+                                Console.WriteLine("Invalid Name Entered - Please Try Again");
+                                Console.WriteLine("------------------------\n");
+                                Console.ForegroundColor = ConsoleColor.White;
+                            }
 
                             Console.WriteLine("Enter Name: ");
                             name = Console.ReadLine();
 
                             loopCount++;
 
-                        } while (string.IsNullOrEmpty(name) || name.Length >= 35);
+                        } while (string.IsNullOrEmpty(name) || name.Length >= 35 || !validator.IsValidString(name));
 
                         String addressLine1 = "";
                         loopCount = 0;
 
                         do
                         {
-
                             if (loopCount > 0)
-                                Console.WriteLine("INVALID ÀDDRESS LINE 1 ENTERED - PLEASE TRY AGAIN");
+                            {
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine("\n------------------------");
+                                Console.WriteLine("Invalid Address Line 1 Entered - Please Try Again");
+                                Console.WriteLine("------------------------\n");
+                                Console.ForegroundColor = ConsoleColor.White;
+                            }
 
                             Console.WriteLine("Enter Address Line 1: ");
                             addressLine1 = Console.ReadLine();
 
                             loopCount++;
 
-                        } while (string.IsNullOrEmpty(addressLine1) || addressLine1.Length >= 30);
+                        } while (string.IsNullOrEmpty(addressLine1) || addressLine1.Length >= 30 || !validator.IsValidString(addressLine1));
 
                         String addressLine2 = "";
                         loopCount = 0;
@@ -104,14 +118,20 @@ namespace Banking_Application
                         {
 
                             if (loopCount > 0)
-                                Console.WriteLine("INVALID ÀDDRESS LINE 2 ENTERED - PLEASE TRY AGAIN");
+                            {
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine("\n------------------------");
+                                Console.WriteLine("Invalid Address Line 2 Entered - Please Try Again");
+                                Console.WriteLine("------------------------\n");
+                                Console.ForegroundColor = ConsoleColor.White;
+                            }
 
                             Console.WriteLine("Enter Address Line 2: ");
                             addressLine2 = Console.ReadLine();
 
                             loopCount++;
 
-                        } while (string.IsNullOrEmpty(addressLine2) || addressLine2.Length >= 30);
+                        } while (string.IsNullOrEmpty(addressLine2) || addressLine2.Length >= 30 || !validator.IsValidString(addressLine2));
 
                         String addressLine3 = "";
                         loopCount = 0;
@@ -120,14 +140,20 @@ namespace Banking_Application
                         {
 
                             if (loopCount > 0)
-                                Console.WriteLine("INVALID ÀDDRESS LINE 3 ENTERED - PLEASE TRY AGAIN");
+                            {
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine("\n------------------------");
+                                Console.WriteLine("Invalid Address Line 3 Entered - Please Try Again");
+                                Console.WriteLine("------------------------\n");
+                                Console.ForegroundColor = ConsoleColor.White;
+                            }
 
                             Console.WriteLine("Enter Address Line 3: ");
                             addressLine3 = Console.ReadLine();
 
                             loopCount++;
 
-                        } while (string.IsNullOrEmpty(addressLine3) || addressLine3.Length >= 30);
+                        } while (string.IsNullOrEmpty(addressLine3) || addressLine3.Length >= 30 || !validator.IsValidString(addressLine3));
 
                         String town = "";
                         loopCount = 0;
@@ -136,14 +162,20 @@ namespace Banking_Application
                         {
 
                             if (loopCount > 0)
-                                Console.WriteLine("INVALID TOWN ENTERED - PLEASE TRY AGAIN");
+                            {
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine("\n------------------------");
+                                Console.WriteLine("Invalid Town Entered - Please Try Again");
+                                Console.WriteLine("------------------------\n");
+                                Console.ForegroundColor = ConsoleColor.White;
+                            }
 
                             Console.WriteLine("Enter Town: ");
                             town = Console.ReadLine();
 
                             loopCount++;
 
-                        } while (string.IsNullOrEmpty(town) || town.Length >= 25);
+                        } while (string.IsNullOrEmpty(town) || town.Length >= 25 || !validator.IsValidString(town));
 
                         double balance;
                         loopCount = 0;
@@ -151,15 +183,24 @@ namespace Banking_Application
                         do
                         {
                             if (loopCount > 0)
-                                Console.WriteLine("INVALID OPENING BALANCE ENTERED - PLEASE TRY AGAIN");
+                            {
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine("\n------------------------");
+                                Console.WriteLine("Invalid Balanced Entered - Please Try Again");
+                                Console.WriteLine("------------------------\n");
+                                Console.ForegroundColor = ConsoleColor.White;
+                            }
 
                             Console.WriteLine("Enter Opening Balance: ");
                             string balanceString = Console.ReadLine();
 
-                            if (!double.TryParse(balanceString, out balance) || balance <= 0)
+                            if (validator.IsValidDouble(balanceString, out balance))
+                            {
+                                loopCount = 0; 
+                            }
+                            else
                             {
                                 loopCount++;
-                                continue;
                             }
 
                         } while (balance <= 0);
@@ -168,29 +209,34 @@ namespace Banking_Application
 
                         if (Convert.ToInt32(accountType) == Account_Type.Current_Account)
                         {
-                            double overdraftAmount = -1;
+                            double overdraftAmount;
                             loopCount = 0;
 
                             do
                             {
-
                                 if (loopCount > 0)
-                                    Console.WriteLine("INVALID OVERDRAFT AMOUNT ENTERED - PLEASE TRY AGAIN");
+                                {
+                                    Console.ForegroundColor = ConsoleColor.Red;
+                                    Console.WriteLine("\n------------------------");
+                                    Console.WriteLine("Invalid OverDraft Amount Entered - Please Try Again");
+                                    Console.WriteLine("------------------------\n");
+                                    Console.ForegroundColor = ConsoleColor.White;
+                                }
 
                                 Console.WriteLine("Enter Overdraft Amount: ");
                                 String overdraftAmountString = Console.ReadLine();
 
-                                try
+                                if (validator.IsValidDouble(overdraftAmountString, out overdraftAmount))
                                 {
-                                    overdraftAmount = Convert.ToDouble(overdraftAmountString);
+                                    loopCount = 0;
                                 }
-
-                                catch
+                                else
                                 {
                                     loopCount++;
                                 }
 
-                            } while (overdraftAmount < 0);
+                            } while (overdraftAmount <= 0);
+
                             byte[] iv = encryption_handler.CreateIV();
                             string accountNo = System.Guid.NewGuid().ToString();
 
@@ -199,30 +245,34 @@ namespace Banking_Application
 
                         else
                         {
-
-                            double interestRate = -1;
+                            double interestRate;
                             loopCount = 0;
 
                             do
                             {
-
                                 if (loopCount > 0)
-                                    Console.WriteLine("INVALID INTEREST RATE ENTERED - PLEASE TRY AGAIN");
+                                {
+                                    Console.ForegroundColor = ConsoleColor.Red;
+                                    Console.WriteLine("\n------------------------");
+                                    Console.WriteLine("Invalid Interest Rate Entered - Please Try Again");
+                                    Console.WriteLine("------------------------\n");
+                                    Console.ForegroundColor = ConsoleColor.White;
+                                }
+                            
 
                                 Console.WriteLine("Enter Interest Rate: ");
                                 String interestRateString = Console.ReadLine();
 
-                                try
+                                if (validator.IsValidDouble(interestRateString, out interestRate))
                                 {
-                                    interestRate = Convert.ToDouble(interestRateString);
+                                    loopCount = 0;
                                 }
-
-                                catch
+                                else
                                 {
                                     loopCount++;
                                 }
 
-                            } while (interestRate < 0);
+                            } while (interestRate <= 0);
 
                             byte[] iv = encryption_handler.CreateIV(); // create account random IV
                             string accountNo = System.Guid.NewGuid().ToString(); // Create account num
@@ -295,11 +345,28 @@ namespace Banking_Application
                     case "3":
                         Console.WriteLine("Enter Account Number: ");
                         accNo = Console.ReadLine();
+                        ba = null;
+
+                        //Example of Utlilizing relection
 
                         if (!string.IsNullOrEmpty(accNo) && accNo.Length == 36)
                         {
+                            Type dataAccessType = typeof(Data_Access_Layer);
 
-                            ba = dal.findBankAccountByAccNo(accNo);
+                            MethodInfo method = dataAccessType.GetMethod("findBankAccountByAccNo");
+
+                            if(method != null)
+                            {
+                                var access = Activator.CreateInstance(dataAccessType);
+
+                                object result = method.Invoke(access, new object[] { accNo });
+
+                                if (result != null && result is Bank_Account)
+                                {
+                                    ba = (Bank_Account)result; //cast result to bank account type
+                                }
+
+                            }
 
                             if (ba is null)
                             {
